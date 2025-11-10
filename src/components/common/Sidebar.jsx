@@ -26,29 +26,7 @@ const NavItem = ({ active, icon, label, onClick, className = "" }) => {
   );
 };
 
-const Sidebar = ({ open, activeTab, setActiveTab, userRole, handleLogout, navigate, onClose, isVisible }) => {
-  // Animation variants for the sidebar
-  const sidebarVariants = {
-    open: {
-      x: 0,
-      opacity: 1,
-      transition: {
-        type: "spring",
-        stiffness: 300,
-        damping: 30
-      }
-    },
-    closed: {
-      x: "-100%",
-      opacity: 0,
-      transition: {
-        type: "spring",
-        stiffness: 300,
-        damping: 30
-      }
-    }
-  };
-
+const Sidebar = ({ open, activeTab, setActiveTab, userRole, handleLogout, navigate, onClose }) => {
   const sweeperNavItems = [
     { id: "dashboard", icon: <FaChartLine />, label: "Dashboard" },
     { id: "routes", icon: <FaRoute />, label: "My Routes" },
@@ -94,12 +72,14 @@ const Sidebar = ({ open, activeTab, setActiveTab, userRole, handleLogout, naviga
 
   return (
     <motion.div
-      initial="closed"
-      animate={isVisible ? "open" : "closed"}
-      variants={sidebarVariants}
+      initial={{ x: -20, opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      transition={{ duration: 0.3 }}
       className={`
         bg-white shadow-sm w-64 flex flex-col py-6 overflow-hidden
+        ${open ? "translate-x-0" : "-translate-x-full"}
         fixed left-0 top-16 bottom-0 z-40
+        transform transition-transform duration-300 ease-in-out
       `}
     >
       <div className="flex flex-col flex-1 overflow-y-auto">

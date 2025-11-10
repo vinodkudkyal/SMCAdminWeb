@@ -20,7 +20,7 @@ import {
 } from "../../components/charts/AttendanceCharts";
 import { io } from "socket.io-client";
 
-const API_BASE = "https://smc-backend-bjm5.onrender.com";
+const API_BASE = "http://localhost:3000";
 
 const SweeperList = () => {
   // ... keep all your existing state and helper functions ...

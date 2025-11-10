@@ -193,11 +193,7 @@ const DashboardLayout = ({ children, userRole, handleLogout }) => {
       <div className="flex flex-1">
         {/* Mobile backdrop */}
         {sidebarOpen && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+          <div 
             className="fixed inset-0 bg-black/40 z-30 md:hidden"
             onClick={() => setSidebarOpen(false)}
           />
@@ -210,7 +206,6 @@ const DashboardLayout = ({ children, userRole, handleLogout }) => {
           userRole={userRole} 
           handleLogout={handleLogout}
           onClose={() => setSidebarOpen(false)}
-          isVisible={sidebarOpen}
         />
         
         <main className="flex-1 p-6 overflow-y-auto transition-all duration-300 ml-0 md:ml-64">
