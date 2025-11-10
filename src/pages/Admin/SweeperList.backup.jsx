@@ -647,20 +647,17 @@
 // export default SweeperList;
 
 
-// import React, { useState, useEffect, useRef } from "react";
-// import moment from "moment";
-// import Card from "../../components/common/Card";
-// import Badge from "../../components/common/Badge";
-// import Button from "../../components/common/Button";
-// import {
-//   FaSearch,
-//   FaRoute,
-//   FaMapMarkerAlt,
-//   FaUserPlus,
-//   FaClock,
-//   FaTrash,
-//   FaSync,
-// } from "react-icons/fa";
+import React, { useState, useEffect, useRef } from "react";
+import moment from "moment";
+import Card from "../../components/common/Card";
+import Button from "../../components/common/Button";
+import {
+  FaSearch,
+  FaUserPlus,
+  FaClock,
+  FaTrash,
+  FaSync,
+} from "react-icons/fa";
 // import {
 //   WeeklyAttendanceChart,
 //   AttendancePieChart,
@@ -1968,7 +1965,6 @@
 
 // export default SweeperList;
 
-
 import React, { useState, useEffect, useRef } from "react";
 import moment from "moment";
 import Card from "../../components/common/Card";
@@ -2409,7 +2405,12 @@ const SweeperList = () => {
                         </div>
                         <div className="text-xs text-gray-500">{sweeper.email || ""}</div>
                       </td>
-
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{sweeper.zone || "—"}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Badge variant={(sweeper.status === "active" && "success") || "warning"} className="capitalize">
+                          {sweeper.status || "unknown"}
+                        </Badge>
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {sweeper.dutyTime && (sweeper.dutyTime.start || sweeper.dutyTime.end) ? (
                           <div className="text-sm">
@@ -2424,9 +2425,30 @@ const SweeperList = () => {
                           </Button>
                         </div>
                       </td>
-
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Badge variant={sweeper.hasToday ? "success" : "danger"} className="capitalize">
+                          {sweeper.hasToday ? "present" : "pending"}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <div className="flex items-center">
+                          <div className="w-24 bg-gray-200 rounded-full h-1.5 mr-2">
+                            <div
+                              className="bg-primary h-1.5 rounded-full"
+                              style={{ width: `${((sweeper.verifications || 0) / 5) * 100}%` }}
+                            ></div>
+                          </div>
+                          <span>{sweeper.verifications ?? 0}/5</span>
+                        </div>
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex space-x-2">
+                          <Button size="sm" color="black" iconOnly title="Assign Route">
+                            <FaRoute />
+                          </Button>
+                          <Button size="sm" color="black" iconOnly title="Track Location">
+                            <FaMapMarkerAlt />
+                          </Button>
                           <Button
                             size="sm"
                             color="black"
