@@ -1,0 +1,107 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Light-blue theme variables and small UI utilities
+   Added on top of your Tailwind setup so you keep utility classes,
+   but also get design tokens and a few helper classes used by the
+   UI components I provided earlier.
+*/
+
+:root{
+  --primary: #3b82f6;       /* sky-500 */
+  --primary-dark: #2563eb;  /* sky-600 */
+  --accent: #60a5fa;
+  --bg: #f8fbff;
+  --card-bg: rgba(255,255,255,0.80);
+  --muted: #64748b;
+  --app-bg-start: #f6fbff;
+  --app-bg-end: #eef8ff;
+  --glass-border: rgba(255,255,255,0.6);
+}
+
+/* App background helper */
+.bg-app-bg {
+  background: linear-gradient(180deg, var(--app-bg-start) 0%, var(--app-bg-end) 100%);
+}
+
+/* Primary / theme helpers */
+.bg-primary { background-color: var(--primary) !important; }
+.bg-primary-dark { background-color: var(--primary-dark) !important; }
+.text-primary { color: var(--primary) !important; }
+.text-muted { color: var(--muted) !important; }
+
+/* Card / glass helpers */
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 0.75rem;
+  box-shadow: 0 6px 18px rgba(7,22,52,0.06);
+}
+
+/* Button helper matching theme */
+.btn-primary {
+  background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 6px 18px rgba(37,99,235,0.12);
+}
+
+/* Slight glass card border used in some components */
+.rounded-xl { border-radius: 0.75rem; }
+.shadow-sm { box-shadow: 0 6px 18px rgba(7,22,52,0.04); }
+.border-soft { border: 1px solid rgba(15,23,42,0.04); }
+
+/* Small helper utilities used by the custom User Home:
+   these are intentionally minimal because Tailwind provides full set.
+   They act as fallbacks if some classes are referenced without Tailwind
+   being fully applied in the environment.
+*/
+.bg-white { background-color: #fff !important; }
+.p-4 { padding: 1rem !important; }
+.p-6 { padding: 1.5rem !important; }
+.mt-4 { margin-top: 1rem !important; }
+.mb-2 { margin-bottom: 0.5rem !important; }
+.text-slate-900 { color: #08112a !important; }
+.text-slate-700 { color: #334155 !important; }
+.text-slate-600 { color: #475569 !important; }
+.text-slate-500 { color: #64748b !important; }
+.text-lg { font-size: 1.125rem !important; }
+.text-2xl { font-size: 1.5rem !important; }
+.font-semibold { font-weight: 600 !important; }
+.font-bold { font-weight: 700 !important; }
+.flex { display: flex !important; }
+.items-center { align-items: center !important; }
+.justify-between { justify-content: space-between !important; }
+.gap-4 { gap: 1rem !important; }
+
+/* Simple animate-spin fallback (keeps existing spin usage working) */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.animate-spin { animation: spin 1s linear infinite; }
+
+/* Subtle custom scrollbars using theme colors */
+*::-webkit-scrollbar { height: 10px; width: 10px; }
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--primary), var(--primary-dark));
+  border-radius: 10px;
+}
+*::-webkit-scrollbar-track { background: transparent; }
+
+/* Accessibility: reduced motion respect */
+@media (prefers-reduced-motion: reduce) {
+  .animate-spin { animation: none !important; }
+  * { transition: none !important; }
+}
+
+/* Notes:
+   - Because your project uses Tailwind, prefer to move these CSS vars
+     into tailwind.config.js under theme.extend.colors for full Tailwind
+     integration (optional).
+   - This file intentionally keeps Tailwind directives at the top so your
+     generated utilities continue to be available; these custom vars and
+     helpers layer on top and are safe to keep in index.css.
+*/
