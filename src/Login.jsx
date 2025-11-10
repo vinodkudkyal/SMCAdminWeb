@@ -190,7 +190,7 @@ const Login = () => {
         <div className="flex flex-col items-center mb-6">
           <div className="w-24 h-24 rounded-full overflow-hidden flex items-center justify-center bg-gradient-to-tr from-primary to-secondary p-1 shadow-md">
             <img
-              src="src/assets/image.png"
+              src="./src/assets/image.png"
               alt="Solapur Municipal Corporation"
               className="w-20 h-20 object-contain select-none"
             />
