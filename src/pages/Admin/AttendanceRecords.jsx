@@ -583,8 +583,8 @@ import Button from "../../components/common/Button";
 import { FaSearch, FaCalendarAlt, FaDownload, FaUserCheck, FaFilter } from "react-icons/fa";
 import moment from "moment";
 
-// const API_BASE = "https://smc-backend-bjm5.onrender.com";
-const API_BASE = "http://localhost:3000";
+const API_BASE = "https://smc-backend-bjm5.onrender.com";
+// const API_BASE = "http://localhost:3000";
 
 const AttendanceRecords = () => {
   const [sweepers, setSweepers] = useState([]);

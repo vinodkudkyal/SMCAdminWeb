@@ -26,8 +26,8 @@ import Modal from "../../components/common/Modal";
 // API base - runtime-safe
 const API_BASE =
   (typeof window !== "undefined" && window.__API_BASE) ||
-  // "https://smc-backend-bjm5.onrender.com";
-  "http://localhost:3000";
+  "https://smc-backend-bjm5.onrender.com";
+  // "http://localhost:3000";
 
 // Geofence types
 const GEOFENCE_TYPES = {
