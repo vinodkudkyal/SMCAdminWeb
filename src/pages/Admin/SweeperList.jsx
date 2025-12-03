@@ -2189,6 +2189,7 @@
 // export default SweeperList;
 
 
+
 import React, { useState, useEffect, useRef } from "react";
 import moment from "moment";
 import Card from "../../components/common/Card";
@@ -2290,7 +2291,60 @@ const SweeperList = () => {
     }
   };
 
+  // NEW: helpers to extract embedded alarm events inside sweeper document (older format)
+  const normalizeEmbeddedEvent = (ev, sweeper) => {
+    const copy = { ...(ev || {}) };
+    if (copy.id && !copy._id) copy._id = copy.id;
+    if (copy.alarmTimestampMs && typeof copy.alarmTimestampMs !== "number") {
+      const p = Number(copy.alarmTimestampMs);
+      copy.alarmTimestampMs = isNaN(p) ? null : p;
+    } else if (!copy.alarmTimestampMs && copy.alarmTimestamp) {
+      const p = Number(copy.alarmTimestamp);
+      copy.alarmTimestampMs = isNaN(p) ? null : p;
+    }
+    if (copy.openedTimestampMs && typeof copy.openedTimestampMs !== "number") {
+      const p = Number(copy.openedTimestampMs);
+      copy.openedTimestampMs = isNaN(p) ? null : p;
+    }
+    if (copy.verificationTimestampMs && typeof copy.verificationTimestampMs !== "number") {
+      const p = Number(copy.verificationTimestampMs);
+      copy.verificationTimestampMs = isNaN(p) ? null : p;
+    }
+    if (copy.responseMs && typeof copy.responseMs !== "number") {
+      const p = Number(copy.responseMs);
+      copy.responseMs = isNaN(p) ? null : p;
+    }
+    if (!copy.sweeperId) copy.sweeperId = sweeper._id || sweeper.id || null;
+    // convert createdAt if it's a parseable string/number
+    if (copy.createdAt && typeof copy.createdAt !== "object") {
+      const parsed = Date.parse(String(copy.createdAt));
+      if (!isNaN(parsed)) copy.createdAt = new Date(parsed);
+    }
+    return copy;
+  };
+
+  const extractEmbeddedAlarmEvents = (sweeper) => {
+    if (!sweeper || !sweeper.alarmEvents) return [];
+    try {
+      const out = [];
+      if (Array.isArray(sweeper.alarmEvents)) {
+        for (const ev of sweeper.alarmEvents) out.push(normalizeEmbeddedEvent(ev, sweeper));
+      } else if (typeof sweeper.alarmEvents === "object") {
+        // expected shape: { "YYYY-MM-DD": [ ...events ] }
+        for (const key of Object.keys(sweeper.alarmEvents)) {
+          const arr = Array.isArray(sweeper.alarmEvents[key]) ? sweeper.alarmEvents[key] : [];
+          for (const ev of arr) out.push(normalizeEmbeddedEvent(ev, sweeper));
+        }
+      }
+      return out;
+    } catch (err) {
+      console.warn("extractEmbeddedAlarmEvents error:", err);
+      return [];
+    }
+  };
+
   // robust alarm fetcher: uses /sweepers/:id/alarmevents and falls back to /alarmevents?sweeperId=...
+  // merges API events with embedded events from the sweeper document
   const fetchAlarmsForSweeperView = async (sweeper, fromDateStr, toDateStr) => {
     if (!sweeper) return [];
     setAlarmsLoading(true);
@@ -2323,36 +2377,49 @@ const SweeperList = () => {
       }
       console.debug("[fetchAlarms] status:", res.status, "body:", json);
 
+      let apiEvents = [];
       if (res.ok && Array.isArray(json)) {
-        const normalized = json.map((ev) => ({
+        apiEvents = json.map((ev) => ({
           ...ev,
           alarmTimestampMs: ev.alarmTimestampMs ? Number(ev.alarmTimestampMs) : null,
           openedTimestampMs: ev.openedTimestampMs ? Number(ev.openedTimestampMs) : null,
           verificationTimestampMs: ev.verificationTimestampMs ? Number(ev.verificationTimestampMs) : null,
           responseMs: ev.responseMs ? Number(ev.responseMs) : null,
         }));
-        setAlarmRecords(normalized);
-        setAlarmsSummary((prev) => ({ ...prev, [id]: { ...(prev[id] || {}), full: normalized, recent: normalized.slice(0, 5) } }));
-        return normalized;
+      } else {
+        // fallback
+        const fallbackUrl = `${API_BASE}/alarmevents?sweeperId=${encodeURIComponent(id)}`;
+        console.debug("[fetchAlarms] Trying fallback GET", fallbackUrl);
+        const r2 = await fetch(fallbackUrl);
+        const j2 = await r2.json().catch(() => []);
+        console.debug("[fetchAlarms fallback] status:", r2.status, "body:", j2);
+        const arr = Array.isArray(j2) ? j2 : Array.isArray(j2.alarmevents) ? j2.alarmevents : [];
+        apiEvents = arr.map((ev) => ({
+          ...ev,
+          alarmTimestampMs: ev.alarmTimestampMs ? Number(ev.alarmTimestampMs) : null,
+          openedTimestampMs: ev.openedTimestampMs ? Number(ev.openedTimestampMs) : null,
+          verificationTimestampMs: ev.verificationTimestampMs ? Number(ev.verificationTimestampMs) : null,
+          responseMs: ev.responseMs ? Number(ev.responseMs) : null,
+        }));
       }
 
-      // fallback
-      const fallbackUrl = `${API_BASE}/alarmevents?sweeperId=${encodeURIComponent(id)}`;
-      console.debug("[fetchAlarms] Trying fallback GET", fallbackUrl);
-      const r2 = await fetch(fallbackUrl);
-      const j2 = await r2.json().catch(() => []);
-      console.debug("[fetchAlarms fallback] status:", r2.status, "body:", j2);
-      const arr = Array.isArray(j2) ? j2 : Array.isArray(j2.alarmevents) ? j2.alarmevents : [];
-      const normalized2 = arr.map((ev) => ({
-        ...ev,
-        alarmTimestampMs: ev.alarmTimestampMs ? Number(ev.alarmTimestampMs) : null,
-        openedTimestampMs: ev.openedTimestampMs ? Number(ev.openedTimestampMs) : null,
-        verificationTimestampMs: ev.verificationTimestampMs ? Number(ev.verificationTimestampMs) : null,
-        responseMs: ev.responseMs ? Number(ev.responseMs) : null,
-      }));
-      setAlarmRecords(normalized2);
-      setAlarmsSummary((prev) => ({ ...prev, [id]: { ...(prev[id] || {}), full: normalized2, recent: normalized2.slice(0, 5) } }));
-      return normalized2;
+      // extract embedded events from sweeper doc
+      const embedded = extractEmbeddedAlarmEvents(sweeper);
+
+      // merge+dedupe by _id or alarmTimestampMs
+      const mergedMap = new Map();
+      const pushToMap = (ev) => {
+        const key = ev._id ? String(ev._id) : ev.alarmTimestampMs ? `ts:${ev.alarmTimestampMs}` : JSON.stringify(ev);
+        if (!mergedMap.has(key)) mergedMap.set(key, ev);
+      };
+      apiEvents.forEach(pushToMap);
+      embedded.forEach(pushToMap);
+
+      const merged = Array.from(mergedMap.values()).sort((a, b) => (b.alarmTimestampMs || 0) - (a.alarmTimestampMs || 0));
+
+      setAlarmRecords(merged);
+      setAlarmsSummary((prev) => ({ ...prev, [id]: { ...(prev[id] || {}), full: merged, recent: merged.slice(0, 5) } }));
+      return merged;
     } catch (err) {
       console.error("fetchAlarmsForSweeperView error:", err);
       setAlarmRecords([]);
@@ -2479,7 +2546,7 @@ const SweeperList = () => {
           socketRef.current.disconnect();
           socketRef.current = null;
         }
-      } catch {}
+      } catch { }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -2603,7 +2670,7 @@ const SweeperList = () => {
       let data = null;
       try {
         data = text ? JSON.parse(text) : null;
-      } catch {}
+      } catch { }
       if (!res.ok) {
         const msg = data?.message || `Failed to delete sweeper (${res.status})`;
         throw new Error(msg);
@@ -2629,7 +2696,7 @@ const SweeperList = () => {
     try {
       const recs = await fetchAttendanceForSweeper(sweeper._id || sweeper.id, attendanceFrom, attendanceTo);
       setAttendanceRecords(recs);
-      // fetch alarms and set state for modal
+      // fetch alarms and set state for modal (fetchAlarmsForSweeperView will also include embedded events)
       await fetchAlarmsForSweeperView(sweeper, attendanceFrom, attendanceTo);
     } catch (err) {
       console.error("openDetail error:", err);
@@ -2730,18 +2797,26 @@ const SweeperList = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Missed / Alarms</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duty Time</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Name
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Duty Time
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
               </thead>
+
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredList.map((sweeper) => {
-                  const isDeleting = deletingId && deletingId === (sweeper._id || sweeper.id);
-                  const aSummary = alarmsSummary[sweeper._id || sweeper.id] || { missed: 0, active: 0, recent: [], full: [] };
+                  const isDeleting =
+                    deletingId && deletingId === (sweeper._id || sweeper.id);
+
                   return (
                     <tr key={sweeper._id || sweeper.id} className="hover:bg-gray-50">
+                      {/* Name column */}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div
                           className="font-medium cursor-pointer text-primary"
@@ -2749,43 +2824,48 @@ const SweeperList = () => {
                         >
                           {sweeper.name || "—"}
                         </div>
-                        <div className="text-xs text-gray-500">{sweeper.email || ""}</div>
-                        <div className="text-xs text-gray-500 mt-1">{sweeper.zone || ""}</div>
-                      </td>
-
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center space-x-3">
-                          <div>
-                            <div className="text-sm font-medium">{aSummary.missed}</div>
-                            <div className="text-xs text-gray-500">missed (24h)</div>
-                          </div>
-                          {aSummary.active > 0 && (
-                            <div className="flex items-center text-sm text-red-600">
-                              <FaBell className="mr-2" />
-                              <div>{aSummary.active} active</div>
-                            </div>
-                          )}
+                        <div className="text-xs text-gray-500">
+                          {sweeper.email || ""}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          {sweeper.zone || ""}
                         </div>
                       </td>
 
+                      {/* Duty time column */}
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {sweeper.dutyTime && (sweeper.dutyTime.start || sweeper.dutyTime.end) ? (
+                        {sweeper.dutyTime &&
+                          (sweeper.dutyTime.start || sweeper.dutyTime.end) ? (
                           <div className="text-sm">
-                            <div>{sweeper.dutyTime.start || "—"} - {sweeper.dutyTime.end || "—"}</div>
+                            <div>
+                              {sweeper.dutyTime.start || "—"} -{" "}
+                              {sweeper.dutyTime.end || "—"}
+                            </div>
                           </div>
                         ) : (
                           <div className="text-sm text-gray-500">Not set</div>
                         )}
                         <div className="mt-2">
-                          <Button size="sm" color="black" onClick={() => openDutyModal(sweeper)}>
+                          <Button
+                            size="sm"
+                            color="black"
+                            onClick={() => openDutyModal(sweeper)}
+                          >
                             <FaClock className="mr-1" /> Duty
                           </Button>
                         </div>
                       </td>
 
+                      {/* Actions column */}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex space-x-2">
-                          <Button size="sm" color="primary" onClick={() => openDetail(sweeper)}>Details</Button>
+                          <Button
+                            size="sm"
+                            color="primary"
+                            onClick={() => openDetail(sweeper)}
+                          >
+                            Details
+                          </Button>
                           <Button
                             size="sm"
                             color="danger"
@@ -2801,6 +2881,7 @@ const SweeperList = () => {
                     </tr>
                   );
                 })}
+
               </tbody>
             </table>
           )}
@@ -2811,9 +2892,8 @@ const SweeperList = () => {
       {showDetailModal && detailSweeper && (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 p-6 overflow-auto">
           <div
-            className={`w-full max-w-4xl p-6 rounded-lg shadow-lg bg-white ${
-              isPresentToday(attendanceRecords) ? "border-2 border-green-500" : "border-2 border-red-500"
-            }`}
+            className={`w-full max-w-4xl p-6 rounded-lg shadow-lg bg-white ${isPresentToday(attendanceRecords) ? "border-2 border-green-500" : "border-2 border-red-500"
+              }`}
           >
             <div className="flex justify-between items-start mb-4">
               <div className="flex-1">
@@ -2851,36 +2931,52 @@ const SweeperList = () => {
                 <input type="date" className="border p-2 rounded" value={attendanceFrom} onChange={(e) => setAttendanceFrom(e.target.value)} />
                 <label className="text-sm text-gray-600">To</label>
                 <input type="date" className="border p-2 rounded" value={attendanceTo} onChange={(e) => setAttendanceTo(e.target.value)} />
-                <Button color="black" onClick={async () => {
-                  setAttendanceLoading(true);
-                  setAttendanceRecords([]);
-                  try {
-                    const recs = await fetchAttendanceForSweeper(detailSweeper._id || detailSweeper.id, attendanceFrom, attendanceTo);
-                    setAttendanceRecords(recs);
-                  } catch (err) {
-                    console.error(err);
-                  } finally {
-                    setAttendanceLoading(false);
-                  }
-                }}>
+                <Button
+                  color="black"
+                  onClick={async () => {
+                    setAttendanceLoading(true);
+                    setAttendanceRecords([]);
+                    try {
+                      // 1) Reload attendance
+                      const recs = await fetchAttendanceForSweeper(
+                        detailSweeper._id || detailSweeper.id,
+                        attendanceFrom,
+                        attendanceTo
+                      );
+                      setAttendanceRecords(recs);
+
+                      // 2) Reload alarm events for this sweeper & date range
+                      await fetchAlarmsForSweeperView(
+                        detailSweeper,
+                        attendanceFrom,
+                        attendanceTo
+                      );
+                    } catch (err) {
+                      console.error(err);
+                    } finally {
+                      setAttendanceLoading(false);
+                    }
+                  }}
+                >
                   Refresh
                 </Button>
 
+
                 <Button variant="outline" color="secondary" onClick={() => {
                   if (!attendanceRecords || attendanceRecords.length === 0) { window.alert("No records to export"); return; }
-                  const header = ["attendanceDate","recordedDate","recordedTime"];
+                  const header = ["attendanceDate", "recordedDate", "recordedTime"];
                   const rows = attendanceRecords.map((a) => {
                     const attendanceDate = a.date ? moment(a.date).format("YYYY-MM-DD") : "";
                     const recordedDate = a.createdAt ? moment(a.createdAt).format("YYYY-MM-DD") : "";
                     const recordedTime = a.createdAt ? moment(a.createdAt).format("HH:mm:ss") : "";
-                    return [attendanceDate, recordedDate, recordedTime].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",");
+                    return [attendanceDate, recordedDate, recordedTime].map(v => `"${String(v).replace(/"/g, '""')}"`).join(",");
                   });
-                  const csv = [header.join(","),...rows].join("\n");
-                  const blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
+                  const csv = [header.join(","), ...rows].join("\n");
+                  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
                   const url = URL.createObjectURL(blob);
                   const a = document.createElement('a');
                   a.href = url;
-                  a.download = `${detailSweeper.name||'sweeper'}_attendance_${attendanceFrom}_${attendanceTo}.csv`;
+                  a.download = `${detailSweeper.name || 'sweeper'}_attendance_${attendanceFrom}_${attendanceTo}.csv`;
                   document.body.appendChild(a);
                   a.click();
                   a.remove();
@@ -2917,90 +3013,83 @@ const SweeperList = () => {
                 </div>
               )}
             </div>
-
             <div className="mb-4">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="font-medium">Alarm / Events (history)</h4>
-                <div className="flex items-center space-x-2">
-                  <Button variant="outline" color="secondary" onClick={() => setShowFullAlarmHistory((v) => !v)}>
-                    <FaHistory className="mr-2" /> {showFullAlarmHistory ? "Show Recent" : "Show Full History"}
-                  </Button>
+              <h4 className="font-medium mb-2">Alarm / Events History</h4>
+
+              {alarmsLoading ? (
+                <div className="text-sm text-gray-500">Loading alarm events...</div>
+              ) : alarmRecords.length === 0 ? (
+                <div className="text-sm text-gray-500">No alarm events found.</div>
+              ) : (
+                <div className="overflow-x-auto max-h-72 border rounded-lg">
+                  <table className="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-3 py-2 text-left">Alarm Time</th>
+                        <th className="px-3 py-2 text-left">Opened</th>
+                        <th className="px-3 py-2 text-left">Opened Time</th>
+                        <th className="px-3 py-2 text-left">Response (ms)</th>
+                        <th className="px-3 py-2 text-left">Verification Time</th>
+                        <th className="px-3 py-2 text-left">Verification Status</th>
+                        <th className="px-3 py-2 text-left">Created At</th>
+                      </tr>
+                    </thead>
+
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {alarmRecords.map((ev) => (
+                        <tr
+                          key={ev._id}
+                          className="hover:bg-gray-50 cursor-pointer"
+                          onClick={() => setSelectedAlarm(ev)}
+                        >
+                          {/* Alarm time */}
+                          <td className="px-3 py-2">
+                            {ev.alarmTimestampMs
+                              ? moment(Number(ev.alarmTimestampMs)).format("DD MMM YYYY, hh:mm:ss A")
+                              : "-"}
+                          </td>
+
+                          {/* Opened */}
+                          <td className="px-3 py-2">
+                            {ev.opened ? "Yes" : "No"}
+                          </td>
+
+                          {/* Opened Timestamp */}
+                          <td className="px-3 py-2">
+                            {ev.openedTimestampMs
+                              ? moment(Number(ev.openedTimestampMs)).format("hh:mm:ss A")
+                              : "-"}
+                          </td>
+
+                          {/* Response */}
+                          <td className="px-3 py-2">{ev.responseMs ?? "-"}</td>
+
+                          {/* Verification timestamp */}
+                          <td className="px-3 py-2">
+                            {ev.verificationTimestampMs
+                              ? moment(Number(ev.verificationTimestampMs)).format("DD MMM YYYY, hh:mm:ss A")
+                              : "-"}
+                          </td>
+
+                          {/* Verification status */}
+                          <td className="px-3 py-2">{ev.verificationStatus ?? "-"}</td>
+
+                          {/* CreatedAt */}
+                          <td className="px-3 py-2">
+                            {ev.createdAt
+                              ? moment(ev.createdAt).format("DD MMM YYYY, hh:mm A")
+                              : "-"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-              </div>
-
-              <div className="overflow-x-auto max-h-64">
-                {(() => {
-                  const summary = alarmsSummary[detailSweeper._id || detailSweeper.id] || {};
-                  const events = showFullAlarmHistory ? (summary.full || alarmRecords) : (summary.recent || alarmRecords.slice(0, 5));
-                  if (!events || events.length === 0) {
-                    return <div className="text-sm text-gray-500">No alarm events found.</div>;
-                  }
-                  return (
-                    <div className="flex">
-                      <div className="w-2/3 overflow-auto">
-                        <table className="min-w-full divide-y divide-gray-200 text-sm">
-                          <thead className="bg-gray-50">
-                            <tr>
-                              <th className="px-3 py-2 text-left">Ring Time</th>
-                              <th className="px-3 py-2 text-left">State</th>
-                              <th className="px-3 py-2 text-left">Opened</th>
-                              <th className="px-3 py-2 text-left">Response (ms)</th>
-                              <th className="px-3 py-2 text-left">Verification</th>
-                              <th className="px-3 py-2 text-left">Attended By</th>
-                              <th className="px-3 py-2 text-left">Info</th>
-                            </tr>
-                          </thead>
-                          <tbody className="bg-white divide-y divide-gray-200">
-                            {events.map((ev) => {
-                              const { opened, verified, skipped, missed, state, attendedBy } = analyzeEvent(ev, detailSweeper._id || detailSweeper.id);
-                              const rowClass = missed ? "bg-red-50" : verified ? "bg-green-50" : "";
-                              return (
-                                <tr
-                                  key={ev._id || ev.alarmTimestampMs || Math.random()}
-                                  className={`${rowClass} hover:bg-gray-100 cursor-pointer`}
-                                  onClick={() => setSelectedAlarm(ev)}
-                                >
-                                  <td className="px-3 py-2">{ev.alarmTimestampMs ? moment(Number(ev.alarmTimestampMs)).format("YYYY-MM-DD HH:mm:ss") : "-"}</td>
-                                  <td className="px-3 py-2">{state}</td>
-                                  <td className="px-3 py-2">{opened ? (ev.openedTimestampMs ? `Yes (${moment(Number(ev.openedTimestampMs)).format("HH:mm:ss")})` : "Yes") : "No"}</td>
-                                  <td className="px-3 py-2">{ev.responseMs != null ? ev.responseMs : "-"}</td>
-                                  <td className="px-3 py-2">{ev.verificationTimestampMs ? moment(Number(ev.verificationTimestampMs)).format("YYYY-MM-DD HH:mm:ss") : (ev.verificationStatus || "-")}</td>
-                                  <td className="px-3 py-2">{attendedBy}</td>
-                                  <td className="px-3 py-2">{ev.note || ev.message || "-"}</td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-
-                      <div className="w-1/3 pl-4">
-                        <div className="sticky top-0">
-                          <h5 className="text-sm font-medium mb-2 flex items-center"><FaInfoCircle className="mr-2" /> Selected Alarm Details</h5>
-                          {!selectedAlarm ? (
-                            <div className="text-sm text-gray-500">Click an alarm row to see full details (timestamps, raw fields).</div>
-                          ) : (
-                            <div className="text-sm">
-                              <div className="mb-2"><strong>Alarm time:</strong> {selectedAlarm.alarmTimestampMs ? moment(Number(selectedAlarm.alarmTimestampMs)).format("YYYY-MM-DD HH:mm:ss") : "-"}</div>
-                              <div className="mb-2"><strong>Created at:</strong> {selectedAlarm.createdAt ? moment(selectedAlarm.createdAt).format("YYYY-MM-DD HH:mm:ss") : "-"}</div>
-                              <div className="mb-2"><strong>Opened:</strong> {selectedAlarm.opened ? `Yes (${selectedAlarm.openedTimestampMs ? moment(Number(selectedAlarm.openedTimestampMs)).format("YYYY-MM-DD HH:mm:ss") : "-"})` : "No"}</div>
-                              <div className="mb-2"><strong>Response (ms):</strong> {selectedAlarm.responseMs ?? "-"}</div>
-                              <div className="mb-2"><strong>Verification status:</strong> {selectedAlarm.verificationStatus ?? "-"}</div>
-                              <div className="mb-2"><strong>Verification time:</strong> {selectedAlarm.verificationTimestampMs ? moment(Number(selectedAlarm.verificationTimestampMs)).format("YYYY-MM-DD HH:mm:ss") : "-"}</div>
-                              <div className="mb-2"><strong>SweeperId (trigger):</strong> {selectedAlarm.sweeperId ?? "-"}</div>
-                              <div className="mb-2"><strong>Raw JSON:</strong></div>
-                              <pre className="text-xs bg-gray-100 p-2 rounded overflow-auto" style={{ maxHeight: 280 }}>
-                                {JSON.stringify(selectedAlarm, null, 2)}
-                              </pre>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
-              </div>
+              )}
             </div>
+
+
+
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card>
