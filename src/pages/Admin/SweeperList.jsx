@@ -2208,8 +2208,8 @@ import {
 } from "react-icons/fa";
 import { io } from "socket.io-client";
 
-// const API_BASE = "http://localhost:3000";
-const API_BASE = "https://smc-backend-bjm5.onrender.com";
+const API_BASE = "http://localhost:3000";
+// const API_BASE = "https://smc-backend-bjm5.onrender.com";
 // If you use a different backend host/port in production, set API_BASE accordingly.
 
 const SweeperList = () => {
@@ -2597,6 +2597,13 @@ const SweeperList = () => {
     }
   };
 
+  const to12Hour = (timeStr) => {
+    if (!timeStr) return "—";
+    const m = moment(timeStr, ["HH:mm", moment.ISO_8601], true);
+    return m.isValid() ? m.format("hh:mm A") : timeStr;
+  };
+
+
   const openDutyModal = (sweeper) => {
     setSelectedSweeper(sweeper);
     const start = (sweeper.dutyTime && sweeper.dutyTime.start) || "";
@@ -2783,6 +2790,138 @@ const SweeperList = () => {
             <Button variant="outline" color="secondary" onClick={() => loadData()}>
               <FaSync />
             </Button>
+            {showAddModal && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+                  <h2 className="text-xl font-semibold mb-4">Add New Sweeper</h2>
+
+                  {addError && (
+                    <div className="text-red-600 text-sm mb-3">{addError}</div>
+                  )}
+
+                  <div className="space-y-4">
+                    <input
+                      type="text"
+                      className="w-full border p-2 rounded"
+                      placeholder="Name"
+                      value={addName}
+                      onChange={(e) => setAddName(e.target.value)}
+                    />
+
+                    <input
+                      type="email"
+                      className="w-full border p-2 rounded"
+                      placeholder="Email"
+                      value={addEmail}
+                      onChange={(e) => setAddEmail(e.target.value)}
+                    />
+
+                    <input
+                      type="password"
+                      className="w-full border p-2 rounded"
+                      placeholder="Password"
+                      value={addPassword}
+                      onChange={(e) => setAddPassword(e.target.value)}
+                    />
+
+                    <input
+                      type="text"
+                      className="w-full border p-2 rounded"
+                      placeholder="Zone"
+                      value={addZone}
+                      onChange={(e) => setAddZone(e.target.value)}
+                    />
+
+                    <select
+                      className="w-full border p-2 rounded"
+                      value={addStatus}
+                      onChange={(e) => setAddStatus(e.target.value)}
+                    >
+                      <option value="active">Active</option>
+                      <option value="inactive">Inactive</option>
+                    </select>
+                  </div>
+
+                  <div className="flex justify-end gap-3 mt-6">
+                    <Button
+                      variant="outline"
+                      color="default"
+                      onClick={() => {
+                        setShowAddModal(false);
+                        setAddError("");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+
+                    <Button color="black" onClick={handleAddSweeper} disabled={adding}>
+                      {adding ? "Adding..." : "Add Sweeper"}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {showDutyModal && selectedSweeper && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+                  <h2 className="text-xl font-semibold mb-4">
+                    Set Duty Time for {selectedSweeper.name}
+                  </h2>
+
+                  {dutyError && (
+                    <div className="text-red-600 text-sm mb-3">{dutyError}</div>
+                  )}
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm mb-1">Start Time</label>
+                      <input
+                        type="time"
+                        className="w-full border p-2 rounded"
+                        value={dutyStart}
+                        onChange={(e) => setDutyStart(e.target.value)}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm mb-1">End Time</label>
+                      <input
+                        type="time"
+                        className="w-full border p-2 rounded"
+                        value={dutyEnd}
+                        onChange={(e) => setDutyEnd(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-3 mt-6">
+                    <Button
+                      variant="outline"
+                      color="default"
+                      onClick={() => {
+                        setShowDutyModal(false);
+                        setSelectedSweeper(null);
+                        setDutyError("");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+
+                    <Button
+                      color="black"
+                      onClick={handleSaveDuty}
+                      disabled={savingDuty}
+                    >
+                      {savingDuty ? "Saving..." : "Save Duty Time"}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+
+
           </div>
         </div>
 
@@ -2838,10 +2977,10 @@ const SweeperList = () => {
                           (sweeper.dutyTime.start || sweeper.dutyTime.end) ? (
                           <div className="text-sm">
                             <div>
-                              {sweeper.dutyTime.start || "—"} -{" "}
-                              {sweeper.dutyTime.end || "—"}
+                              {to12Hour(sweeper.dutyTime?.start)} - {to12Hour(sweeper.dutyTime?.end)}
                             </div>
                           </div>
+
                         ) : (
                           <div className="text-sm text-gray-500">Not set</div>
                         )}
@@ -2913,7 +3052,9 @@ const SweeperList = () => {
 
                 <div className="text-sm text-gray-600 mt-2">{detailSweeper.email}</div>
                 <div className="text-sm text-gray-600">Zone: {detailSweeper.zone || "—"}</div>
-                <div className="text-sm text-gray-600">Duty Time: {detailSweeper.dutyTime?.start || "—"} - {detailSweeper.dutyTime?.end || "—"}</div>
+                <div className="text-sm text-gray-600">
+                  Duty Time: {to12Hour(detailSweeper.dutyTime?.start)} - {to12Hour(detailSweeper.dutyTime?.end)}
+                </div>
               </div>
 
               <div className="flex items-center space-x-2">

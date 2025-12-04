@@ -1143,8 +1143,8 @@ import Button from "../../components/common/Button";
 import { FaSearch, FaDownload } from "react-icons/fa";
 import moment from "moment";
 
-const API_BASE = "https://smc-backend-bjm5.onrender.com";
-// const API_BASE = "http://localhost:3000";
+// const API_BASE = "https://smc-backend-bjm5.onrender.com";
+const API_BASE = "http://localhost:3000";
 
 const AttendanceRecords = () => {
   const [sweepers, setSweepers] = useState([]);
@@ -1170,6 +1170,14 @@ const AttendanceRecords = () => {
   const [alarmRecords, setAlarmRecords] = useState([]);
   const [alarmsLoading, setAlarmsLoading] = useState(false);
   const [alarmsError, setAlarmsError] = useState("");
+
+  const to12Hour = (timeStr) => {
+    if (!timeStr) return "—";
+    const m = moment(timeStr, ["HH:mm", moment.ISO_8601], true);
+    return m.isValid() ? m.format("hh:mm A") : timeStr;
+  };
+
+
 
   // Export-specific date range (for exporting sweepers + attendance)
   const [exportFrom, setExportFrom] = useState(
@@ -1492,9 +1500,7 @@ const AttendanceRecords = () => {
                         </Badge>
                         <div className="text-xs text-gray-500">
                           {s.dutyTime && (s.dutyTime.start || s.dutyTime.end)
-                            ? `${s.dutyTime.start || "—"} - ${
-                                s.dutyTime.end || "—"
-                              }`
+                            ? `${to12Hour(s.dutyTime.start)} - ${to12Hour(s.dutyTime.end)}`
                             : "No duty time"}
                         </div>
                       </div>
@@ -1637,8 +1643,7 @@ const AttendanceRecords = () => {
                   Zone: {selectedSweeper.zone || "—"}
                 </div>
                 <div className="text-sm text-gray-600">
-                  Duty Time: {selectedSweeper.dutyTime?.start || "—"} -{" "}
-                  {selectedSweeper.dutyTime?.end || "—"}
+                  Duty Time: {to12Hour(selectedSweeper.dutyTime?.start)} - {to12Hour(selectedSweeper.dutyTime?.end)}
                 </div>
                 <div className="text-sm text-gray-600">
                   Geofence points:{" "}
@@ -1772,9 +1777,8 @@ const AttendanceRecords = () => {
                       const url = URL.createObjectURL(blob);
                       const a = document.createElement("a");
                       a.href = url;
-                      a.download = `${
-                        selectedSweeper?.name || "sweeper"
-                      }_attendance_${attendanceFrom}_${attendanceTo}.csv`;
+                      a.download = `${selectedSweeper?.name || "sweeper"
+                        }_attendance_${attendanceFrom}_${attendanceTo}.csv`;
                       document.body.appendChild(a);
                       a.click();
                       a.remove();
@@ -1901,8 +1905,8 @@ const AttendanceRecords = () => {
                             <td className="py-2 pl-4 pr-2 sm:px-3 whitespace-nowrap text-sm text-gray-900">
                               {ev.alarmTimestampMs
                                 ? moment(
-                                    Number(ev.alarmTimestampMs)
-                                  ).format("DD MMM YYYY, hh:mm:ss A")
+                                  Number(ev.alarmTimestampMs)
+                                ).format("DD MMM YYYY, hh:mm:ss A")
                                 : "-"}
                             </td>
                             <td className="px-2 sm:px-3 py-2 whitespace-nowrap text-sm text-gray-900">
@@ -1911,8 +1915,8 @@ const AttendanceRecords = () => {
                             <td className="px-2 sm:px-3 py-2 whitespace-nowrap text-sm text-gray-900">
                               {ev.openedTimestampMs
                                 ? moment(
-                                    Number(ev.openedTimestampMs)
-                                  ).format("hh:mm:ss A")
+                                  Number(ev.openedTimestampMs)
+                                ).format("hh:mm:ss A")
                                 : "-"}
                             </td>
                             <td className="px-2 sm:px-3 py-2 whitespace-nowrap text-sm text-gray-900">
@@ -1921,8 +1925,8 @@ const AttendanceRecords = () => {
                             <td className="px-2 sm:px-3 py-2 whitespace-nowrap text-sm text-gray-900">
                               {ev.verificationTimestampMs
                                 ? moment(
-                                    Number(ev.verificationTimestampMs)
-                                  ).format("DD MMM YYYY, hh:mm:ss A")
+                                  Number(ev.verificationTimestampMs)
+                                ).format("DD MMM YYYY, hh:mm:ss A")
                                 : "-"}
                             </td>
                             <td className="px-2 sm:px-3 py-2 whitespace-nowrap text-sm text-gray-900">
@@ -1931,8 +1935,8 @@ const AttendanceRecords = () => {
                             <td className="px-2 sm:px-3 py-2 whitespace-nowrap text-sm text-gray-900">
                               {ev.createdAt
                                 ? moment(ev.createdAt).format(
-                                    "DD MMM YYYY, hh:mm A"
-                                  )
+                                  "DD MMM YYYY, hh:mm A"
+                                )
                                 : "-"}
                             </td>
                           </tr>
@@ -1961,15 +1965,15 @@ const AttendanceRecords = () => {
                   <span className="hidden sm:inline">
                     {attendanceRecords.length
                       ? moment(
-                          attendanceRecords[attendanceRecords.length - 1].date
-                        ).format("YYYY-MM-DD HH:mm")
+                        attendanceRecords[attendanceRecords.length - 1].date
+                      ).format("YYYY-MM-DD HH:mm")
                       : "-"}
                   </span>
                   <span className="sm:hidden">
                     {attendanceRecords.length
                       ? moment(
-                          attendanceRecords[attendanceRecords.length - 1].date
-                        ).format("MM-DD HH:mm")
+                        attendanceRecords[attendanceRecords.length - 1].date
+                      ).format("MM-DD HH:mm")
                       : "-"}
                   </span>
                 </div>
@@ -1982,15 +1986,15 @@ const AttendanceRecords = () => {
                   <span className="hidden sm:inline">
                     {attendanceRecords.length
                       ? moment(attendanceRecords[0].date).format(
-                          "YYYY-MM-DD HH:mm"
-                        )
+                        "YYYY-MM-DD HH:mm"
+                      )
                       : "-"}
                   </span>
                   <span className="sm:hidden">
                     {attendanceRecords.length
                       ? moment(attendanceRecords[0].date).format(
-                          "MM-DD HH:mm"
-                        )
+                        "MM-DD HH:mm"
+                      )
                       : "-"}
                   </span>
                 </div>
