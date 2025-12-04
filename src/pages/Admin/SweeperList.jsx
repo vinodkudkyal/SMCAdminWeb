@@ -2208,8 +2208,8 @@ import {
 } from "react-icons/fa";
 import { io } from "socket.io-client";
 
-const API_BASE = "http://localhost:3000";
-// const API_BASE = "https://smc-backend-bjm5.onrender.com";
+// const API_BASE = "http://localhost:3000";
+const API_BASE = "https://smc-backend-bjm5.onrender.com";
 // If you use a different backend host/port in production, set API_BASE accordingly.
 
 const SweeperList = () => {
