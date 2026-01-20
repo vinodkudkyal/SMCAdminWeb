@@ -1442,58 +1442,58 @@ const SweeperList = () => {
   // };
 
   const fetchAlarmsForSweeperView = async (sweeper, fromDateStr, toDateStr) => {
-  if (!sweeper) return [];
+    if (!sweeper) return [];
 
-  setAlarmsLoading(true);
-  setAlarmRecords([]);
-
-  try {
-    // 1️⃣ Extract embedded alarms only
-    let embedded = extractEmbeddedAlarmEvents(sweeper);
-
-    // 2️⃣ Apply date filter if provided
-    if (fromDateStr || toDateStr) {
-      const fromMs = fromDateStr
-        ? new Date(fromDateStr).setHours(0, 0, 0, 0)
-        : null;
-      const toMs = toDateStr
-        ? new Date(toDateStr).setHours(23, 59, 59, 999)
-        : null;
-
-      embedded = embedded.filter(ev => {
-        const t = Number(ev.alarmTimestampMs);
-        if (!t) return false;
-        if (fromMs && t < fromMs) return false;
-        if (toMs && t > toMs) return false;
-        return true;
-      });
-    }
-
-    // 3️⃣ Sort newest first
-    embedded.sort(
-      (a, b) => (b.alarmTimestampMs || 0) - (a.alarmTimestampMs || 0)
-    );
-
-    // 4️⃣ Update UI state
-    setAlarmRecords(embedded);
-    setAlarmsSummary(prev => ({
-      ...prev,
-      [sweeper._id || sweeper.id]: {
-        ...(prev[sweeper._id || sweeper.id] || {}),
-        full: embedded,
-        recent: embedded.slice(0, 5),
-      },
-    }));
-
-    return embedded;
-  } catch (err) {
-    console.error("fetchAlarmsForSweeperView error:", err);
+    setAlarmsLoading(true);
     setAlarmRecords([]);
-    return [];
-  } finally {
-    setAlarmsLoading(false);
-  }
-};
+
+    try {
+      // 1️⃣ Extract embedded alarms only
+      let embedded = extractEmbeddedAlarmEvents(sweeper);
+
+      // 2️⃣ Apply date filter if provided
+      if (fromDateStr || toDateStr) {
+        const fromMs = fromDateStr
+          ? new Date(fromDateStr).setHours(0, 0, 0, 0)
+          : null;
+        const toMs = toDateStr
+          ? new Date(toDateStr).setHours(23, 59, 59, 999)
+          : null;
+
+        embedded = embedded.filter(ev => {
+          const t = Number(ev.alarmTimestampMs);
+          if (!t) return false;
+          if (fromMs && t < fromMs) return false;
+          if (toMs && t > toMs) return false;
+          return true;
+        });
+      }
+
+      // 3️⃣ Sort newest first
+      embedded.sort(
+        (a, b) => (b.alarmTimestampMs || 0) - (a.alarmTimestampMs || 0)
+      );
+
+      // 4️⃣ Update UI state
+      setAlarmRecords(embedded);
+      setAlarmsSummary(prev => ({
+        ...prev,
+        [sweeper._id || sweeper.id]: {
+          ...(prev[sweeper._id || sweeper.id] || {}),
+          full: embedded,
+          recent: embedded.slice(0, 5),
+        },
+      }));
+
+      return embedded;
+    } catch (err) {
+      console.error("fetchAlarmsForSweeperView error:", err);
+      setAlarmRecords([]);
+      return [];
+    } finally {
+      setAlarmsLoading(false);
+    }
+  };
 
 
   const loadData = async () => {
@@ -1543,9 +1543,16 @@ const SweeperList = () => {
             .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
           if (latest && latest.location) lastLocation = latest.location;
         }
+
+        // ✅ NEW: Check if sweeper has any alarm events for today
+        const todayAlarms = s.alarmEvents && s.alarmEvents[todayKeyVal]
+          ? s.alarmEvents[todayKeyVal]
+          : [];
+        const hasTodayAlarms = Array.isArray(todayAlarms) && todayAlarms.length > 0;
+
         return {
           ...s,
-          hasToday: todayPresentSet.has(String(s._id || s.id)),
+          hasToday: hasTodayAlarms, // ✅ Changed from attendance-based to alarm-based
           lastLocation,
         };
       });
@@ -1962,8 +1969,8 @@ const SweeperList = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
                           className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${attendanceToday === "Present"
-                              ? "bg-green-100 text-green-700 border border-green-300"
-                              : "bg-gray-100 text-gray-700 border border-gray-300"
+                            ? "bg-green-100 text-green-700 border border-green-300"
+                            : "bg-gray-100 text-gray-700 border border-gray-300"
                             }`}
                         >
                           {attendanceToday}
