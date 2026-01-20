@@ -1312,134 +1312,190 @@ const SweeperList = () => {
     }
   };
 
+  // const fetchAlarmsForSweeperView = async (sweeper, fromDateStr, toDateStr) => {
+  //   if (!sweeper) return [];
+  //   setAlarmsLoading(true);
+  //   setAlarmRecords([]);
+
+  //   console.log("🔍 FETCH ALARMS CALLED FOR:", sweeper.name);
+  //   console.log("🔍 Date range:", fromDateStr, "to", toDateStr);
+
+  //   try {
+  //     const id = sweeper._id || sweeper.id;
+  //     const url = new URL(
+  //       `${API_BASE}/sweepers/${encodeURIComponent(id)}/alarmevents`
+  //     );
+
+  //     if (fromDateStr) {
+  //       const from = new Date(fromDateStr);
+  //       from.setHours(0, 0, 0, 0);
+  //       url.searchParams.append("from", String(from.getTime()));
+  //       console.log("🔍 FROM timestamp:", from.getTime(), "=", from.toISOString());
+  //     }
+  //     if (toDateStr) {
+  //       const to = new Date(toDateStr);
+  //       to.setHours(23, 59, 59, 999);
+  //       url.searchParams.append("to", String(to.getTime()));
+  //       console.log("🔍 TO timestamp:", to.getTime(), "=", to.toISOString());
+  //     }
+
+  //     console.debug("[fetchAlarms] GET", url.toString());
+  //     const res = await fetch(url.toString());
+  //     const text = await res.text();
+  //     let json;
+  //     try {
+  //       json = text ? JSON.parse(text) : [];
+  //     } catch (e) {
+  //       console.warn("[fetchAlarms] invalid JSON:", text);
+  //       json = [];
+  //     }
+  //     console.debug("[fetchAlarms] status:", res.status, "body:", json);
+
+  //     // 🔍 DEBUG: Check what API returned
+  //     console.log("🔍 API RETURNED:", Array.isArray(json) ? json.length : 0, "events");
+  //     if (Array.isArray(json) && json.length > 0) {
+  //       console.log("🔍 First event:", json[0]);
+  //       console.log("🔍 Last event:", json[json.length - 1]);
+  //     }
+
+  //     let apiEvents = [];
+  //     if (res.ok && Array.isArray(json)) {
+  //       apiEvents = json.map((ev) => ({
+  //         ...ev,
+  //         alarmTimestampMs: ev.alarmTimestampMs
+  //           ? Number(ev.alarmTimestampMs)
+  //           : null,
+  //         openedTimestampMs: ev.openedTimestampMs
+  //           ? Number(ev.openedTimestampMs)
+  //           : null,
+  //         verificationTimestampMs: ev.verificationTimestampMs
+  //           ? Number(ev.verificationTimestampMs)
+  //           : null,
+  //         responseMs: ev.responseMs ? Number(ev.responseMs) : null,
+  //       }));
+  //     } else {
+  //       const fallbackUrl = `${API_BASE}/alarmevents? sweeperId=${encodeURIComponent(id)}`;
+  //       console.debug("[fetchAlarms] Trying fallback GET", fallbackUrl);
+  //       const r2 = await fetch(fallbackUrl);
+  //       const j2 = await r2.json().catch(() => []);
+  //       console.debug("[fetchAlarms fallback] status:", r2.status, "body:", j2);
+  //       const arr = Array.isArray(j2)
+  //         ? j2
+  //         : Array.isArray(j2.alarmevents)
+  //           ? j2.alarmevents
+  //           : [];
+  //       apiEvents = arr.map((ev) => ({
+  //         ...ev,
+  //         alarmTimestampMs: ev.alarmTimestampMs
+  //           ? Number(ev.alarmTimestampMs)
+  //           : null,
+  //         openedTimestampMs: ev.openedTimestampMs
+  //           ? Number(ev.openedTimestampMs)
+  //           : null,
+  //         verificationTimestampMs: ev.verificationTimestampMs
+  //           ? Number(ev.verificationTimestampMs)
+  //           : null,
+  //         responseMs: ev.responseMs ? Number(ev.responseMs) : null,
+  //       }));
+  //     }
+
+  //     console.log("🔍 MAPPED apiEvents:", apiEvents.length);
+
+  //     const embedded = extractEmbeddedAlarmEvents(sweeper);
+  //     console.log("🔍 EMBEDDED events from sweeper object:", embedded.length);
+
+  //     const mergedMap = new Map();
+  //     const pushToMap = (ev) => {
+  //       const key = ev._id
+  //         ? String(ev._id)
+  //         : ev.alarmTimestampMs
+  //           ? `ts:${ev.alarmTimestampMs}`
+  //           : JSON.stringify(ev);
+  //       if (!mergedMap.has(key)) mergedMap.set(key, ev);
+  //     };
+  //     apiEvents.forEach(pushToMap);
+  //     embedded.forEach(pushToMap);
+
+  //     const merged = Array.from(mergedMap.values()).sort(
+  //       (a, b) => (b.alarmTimestampMs || 0) - (a.alarmTimestampMs || 0)
+  //     );
+
+  //     console.log("🔍 FINAL MERGED:", merged.length, "events");
+
+  //     setAlarmRecords(merged);
+  //     setAlarmsSummary((prev) => ({
+  //       ...prev,
+  //       [id]: {
+  //         ...(prev[id] || {}),
+  //         full: merged,
+  //         recent: merged.slice(0, 5),
+  //       },
+  //     }));
+  //     return merged;
+  //   } catch (err) {
+  //     console.error("fetchAlarmsForSweeperView error:", err);
+  //     setAlarmRecords([]);
+  //     return [];
+  //   } finally {
+  //     setAlarmsLoading(false);
+  //   }
+  // };
+
   const fetchAlarmsForSweeperView = async (sweeper, fromDateStr, toDateStr) => {
-    if (!sweeper) return [];
-    setAlarmsLoading(true);
-    setAlarmRecords([]);
+  if (!sweeper) return [];
 
-    console.log("🔍 FETCH ALARMS CALLED FOR:", sweeper.name);
-    console.log("🔍 Date range:", fromDateStr, "to", toDateStr);
+  setAlarmsLoading(true);
+  setAlarmRecords([]);
 
-    try {
-      const id = sweeper._id || sweeper.id;
-      const url = new URL(
-        `${API_BASE}/sweepers/${encodeURIComponent(id)}/alarmevents`
-      );
+  try {
+    // 1️⃣ Extract embedded alarms only
+    let embedded = extractEmbeddedAlarmEvents(sweeper);
 
-      if (fromDateStr) {
-        const from = new Date(fromDateStr);
-        from.setHours(0, 0, 0, 0);
-        url.searchParams.append("from", String(from.getTime()));
-        console.log("🔍 FROM timestamp:", from.getTime(), "=", from.toISOString());
-      }
-      if (toDateStr) {
-        const to = new Date(toDateStr);
-        to.setHours(23, 59, 59, 999);
-        url.searchParams.append("to", String(to.getTime()));
-        console.log("🔍 TO timestamp:", to.getTime(), "=", to.toISOString());
-      }
+    // 2️⃣ Apply date filter if provided
+    if (fromDateStr || toDateStr) {
+      const fromMs = fromDateStr
+        ? new Date(fromDateStr).setHours(0, 0, 0, 0)
+        : null;
+      const toMs = toDateStr
+        ? new Date(toDateStr).setHours(23, 59, 59, 999)
+        : null;
 
-      console.debug("[fetchAlarms] GET", url.toString());
-      const res = await fetch(url.toString());
-      const text = await res.text();
-      let json;
-      try {
-        json = text ? JSON.parse(text) : [];
-      } catch (e) {
-        console.warn("[fetchAlarms] invalid JSON:", text);
-        json = [];
-      }
-      console.debug("[fetchAlarms] status:", res.status, "body:", json);
-
-      // 🔍 DEBUG: Check what API returned
-      console.log("🔍 API RETURNED:", Array.isArray(json) ? json.length : 0, "events");
-      if (Array.isArray(json) && json.length > 0) {
-        console.log("🔍 First event:", json[0]);
-        console.log("🔍 Last event:", json[json.length - 1]);
-      }
-
-      let apiEvents = [];
-      if (res.ok && Array.isArray(json)) {
-        apiEvents = json.map((ev) => ({
-          ...ev,
-          alarmTimestampMs: ev.alarmTimestampMs
-            ? Number(ev.alarmTimestampMs)
-            : null,
-          openedTimestampMs: ev.openedTimestampMs
-            ? Number(ev.openedTimestampMs)
-            : null,
-          verificationTimestampMs: ev.verificationTimestampMs
-            ? Number(ev.verificationTimestampMs)
-            : null,
-          responseMs: ev.responseMs ? Number(ev.responseMs) : null,
-        }));
-      } else {
-        const fallbackUrl = `${API_BASE}/alarmevents? sweeperId=${encodeURIComponent(id)}`;
-        console.debug("[fetchAlarms] Trying fallback GET", fallbackUrl);
-        const r2 = await fetch(fallbackUrl);
-        const j2 = await r2.json().catch(() => []);
-        console.debug("[fetchAlarms fallback] status:", r2.status, "body:", j2);
-        const arr = Array.isArray(j2)
-          ? j2
-          : Array.isArray(j2.alarmevents)
-            ? j2.alarmevents
-            : [];
-        apiEvents = arr.map((ev) => ({
-          ...ev,
-          alarmTimestampMs: ev.alarmTimestampMs
-            ? Number(ev.alarmTimestampMs)
-            : null,
-          openedTimestampMs: ev.openedTimestampMs
-            ? Number(ev.openedTimestampMs)
-            : null,
-          verificationTimestampMs: ev.verificationTimestampMs
-            ? Number(ev.verificationTimestampMs)
-            : null,
-          responseMs: ev.responseMs ? Number(ev.responseMs) : null,
-        }));
-      }
-
-      console.log("🔍 MAPPED apiEvents:", apiEvents.length);
-
-      const embedded = extractEmbeddedAlarmEvents(sweeper);
-      console.log("🔍 EMBEDDED events from sweeper object:", embedded.length);
-
-      const mergedMap = new Map();
-      const pushToMap = (ev) => {
-        const key = ev._id
-          ? String(ev._id)
-          : ev.alarmTimestampMs
-            ? `ts:${ev.alarmTimestampMs}`
-            : JSON.stringify(ev);
-        if (!mergedMap.has(key)) mergedMap.set(key, ev);
-      };
-      apiEvents.forEach(pushToMap);
-      embedded.forEach(pushToMap);
-
-      const merged = Array.from(mergedMap.values()).sort(
-        (a, b) => (b.alarmTimestampMs || 0) - (a.alarmTimestampMs || 0)
-      );
-
-      console.log("🔍 FINAL MERGED:", merged.length, "events");
-
-      setAlarmRecords(merged);
-      setAlarmsSummary((prev) => ({
-        ...prev,
-        [id]: {
-          ...(prev[id] || {}),
-          full: merged,
-          recent: merged.slice(0, 5),
-        },
-      }));
-      return merged;
-    } catch (err) {
-      console.error("fetchAlarmsForSweeperView error:", err);
-      setAlarmRecords([]);
-      return [];
-    } finally {
-      setAlarmsLoading(false);
+      embedded = embedded.filter(ev => {
+        const t = Number(ev.alarmTimestampMs);
+        if (!t) return false;
+        if (fromMs && t < fromMs) return false;
+        if (toMs && t > toMs) return false;
+        return true;
+      });
     }
-  };
+
+    // 3️⃣ Sort newest first
+    embedded.sort(
+      (a, b) => (b.alarmTimestampMs || 0) - (a.alarmTimestampMs || 0)
+    );
+
+    // 4️⃣ Update UI state
+    setAlarmRecords(embedded);
+    setAlarmsSummary(prev => ({
+      ...prev,
+      [sweeper._id || sweeper.id]: {
+        ...(prev[sweeper._id || sweeper.id] || {}),
+        full: embedded,
+        recent: embedded.slice(0, 5),
+      },
+    }));
+
+    return embedded;
+  } catch (err) {
+    console.error("fetchAlarmsForSweeperView error:", err);
+    setAlarmRecords([]);
+    return [];
+  } finally {
+    setAlarmsLoading(false);
+  }
+};
+
+
   const loadData = async () => {
     setLoading(true);
     setError("");
@@ -1824,7 +1880,7 @@ const SweeperList = () => {
               <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             </div>
 
-            <select
+            {/* <select
               className="py-2 px-4 border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary focus: outline-none"
               value={filterZone}
               onChange={(e) => setFilterZone(e.target.value)}
@@ -1835,7 +1891,7 @@ const SweeperList = () => {
                   {z}
                 </option>
               ))}
-            </select>
+            </select> */}
           </div>
 
           <div className="flex items-center gap-3">
