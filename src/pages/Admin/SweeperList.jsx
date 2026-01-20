@@ -1089,13 +1089,16 @@ import {
 import { io } from "socket.io-client";
 
 // const API_BASE = "http://localhost:3000";
-const API_BASE = "https://smc-backend-bjm5.onrender.com";
+// const API_BASE = "https://smc-backend-bjm5.onrender.com";
+const API_BASE = "https://smcbakcenddummy.onrender.com";
 
 // Helper to get today's YYYY-MM-DD
 const todayKey = moment().format("YYYY-MM-DD");
 
 // Process alarm summary for a sweeper
 // NEW CODE - Shows ALL alarms from all dates
+
+// Update the processAlarmSummary function to return today's stats
 const processAlarmSummary = (sweeper) => {
   let allAlarms = [];
   try {
@@ -1109,7 +1112,7 @@ const processAlarmSummary = (sweeper) => {
               verificationStatus: ev.verificationStatus
                 ? ev.verificationStatus.toLowerCase()
                 : "",
-              dateKey: dateKey, // Add the date key for reference
+              dateKey: dateKey,
             });
           });
         }
@@ -1119,6 +1122,7 @@ const processAlarmSummary = (sweeper) => {
     console.warn("processAlarmSummary error:", err);
   }
 
+  // All-time stats
   const total = allAlarms.length;
   const attended = allAlarms.filter(
     (ev) => ev.verificationStatus === "attended"
@@ -1130,12 +1134,9 @@ const processAlarmSummary = (sweeper) => {
       (!ev.opened && !ev.verificationTimestampMs)
   ).length;
 
-  // Also get today's specific alarms
+  // Today's alarms
   let todayAlarms = [];
-  if (
-    sweeper.alarmEvents &&
-    Array.isArray(sweeper.alarmEvents[todayKey])
-  ) {
+  if (sweeper.alarmEvents && Array.isArray(sweeper.alarmEvents[todayKey])) {
     todayAlarms = sweeper.alarmEvents[todayKey].map((ev) => ({
       ...ev,
       verificationStatus: ev.verificationStatus
@@ -1144,12 +1145,28 @@ const processAlarmSummary = (sweeper) => {
     }));
   }
 
+  // TODAY'S STATS - ADD THIS
+  const todayTotal = todayAlarms.length;
+  const todayAttended = todayAlarms.filter(
+    (ev) => ev.verificationStatus === "attended"
+  ).length;
+  const todayMissed = todayAlarms.filter(
+    (ev) =>
+      ev.verificationStatus === "missed" ||
+      ev.verificationStatus === "skipped" ||
+      (!ev.opened && !ev.verificationTimestampMs)
+  ).length;
+
   return {
-    total,
-    attended,
-    missed,
-    allAlarms,      // All alarms from all dates
-    todayAlarms,    // Today's alarms only
+    total,           // all-time total
+    attended,        // all-time attended
+    missed,          // all-time missed
+    allAlarms,
+    todayAlarms,
+    // ADD THESE NEW FIELDS
+    todayTotal,
+    todayAttended,
+    todayMissed,
   };
 };
 
@@ -1409,7 +1426,7 @@ const SweeperList = () => {
       setAlarmsSummary((prev) => ({
         ...prev,
         [id]: {
-        ...(prev[id] || {}),
+          ...(prev[id] || {}),
           full: merged,
           recent: merged.slice(0, 5),
         },
@@ -1864,7 +1881,7 @@ const SweeperList = () => {
                 {filteredList.map((sweeper) => {
                   const isDeleting =
                     deletingId && deletingId === (sweeper._id || sweeper.id);
-                  const attendanceToday = sweeper.hasToday ? "Present" : "Absent";
+                  const attendanceToday = sweeper.hasToday ? "Present" : "Day not started";
                   const summary = processAlarmSummary(sweeper);
 
                   return (
@@ -1889,8 +1906,8 @@ const SweeperList = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
                           className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${attendanceToday === "Present"
-                            ? "bg-green-100 text-green-700 border border-green-300"
-                            : "bg-red-100 text-red-700 border border-red-300"
+                              ? "bg-green-100 text-green-700 border border-green-300"
+                              : "bg-gray-100 text-gray-700 border border-gray-300"
                             }`}
                         >
                           {attendanceToday}

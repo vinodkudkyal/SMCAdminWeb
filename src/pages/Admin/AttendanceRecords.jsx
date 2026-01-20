@@ -880,7 +880,8 @@ import Button from "../../components/common/Button";
 import { FaSearch, FaDownload, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 import moment from "moment";
 
-const API_BASE = "https://smc-backend-bjm5.onrender.com";
+// const API_BASE = "https://smc-backend-bjm5.onrender.com";
+const API_BASE = "https://smcbakcenddummy.onrender.com";
 // const API_BASE = "http://localhost:3000";
 
 const AttendanceRecords = () => {
