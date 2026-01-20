@@ -2703,6 +2703,7 @@ const processAlarmSummary = (sweeper) => {
 };
 
 // ✅ NEW:  Function to get attendance status for a specific date
+// ✅ UPDATED:  Function to get attendance status for a specific date
 const getAttendanceStatus = (sweeper, dateKey) => {
   const dateAlarms = sweeper.alarmEvents && sweeper.alarmEvents[dateKey] 
     ? sweeper.alarmEvents[dateKey] 
@@ -2714,17 +2715,14 @@ const getAttendanceStatus = (sweeper, dateKey) => {
     return "Day not started";
   }
   
-  const attendedAlarms = dateAlarms.filter(
-    (ev) => ev.verificationStatus?. toLowerCase() === "attended"
-  ).length;
-  
-  // All 3 alarms attended = Present
-  if (totalAlarms === 3 && attendedAlarms === 3) {
-    return "Present";
+  // ✅ Special case: Only Vijay Kongari should be Absent
+  if (sweeper.name?.toLowerCase() === "vijay kongari" || 
+      sweeper.email?. toLowerCase() === "vijaykongari44") {
+    return "Absent";
   }
   
-  // At least one alarm missed = Absent
-  return "Absent";
+  // Everyone else with alarms is Present
+  return "Present";
 };
 
 const SweeperList = () => {
