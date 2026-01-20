@@ -2704,26 +2704,60 @@ const processAlarmSummary = (sweeper) => {
 
 // ✅ NEW:  Function to get attendance status for a specific date
 // ✅ UPDATED:  Function to get attendance status for a specific date
+// const getAttendanceStatus = (sweeper, dateKey) => {
+//   const dateAlarms = sweeper.alarmEvents && sweeper.alarmEvents[dateKey] 
+//     ? sweeper.alarmEvents[dateKey] 
+//     : [];
+  
+//   const totalAlarms = dateAlarms.length;
+  
+//   if (totalAlarms === 0) {
+//     return "Day not started";
+//   }
+  
+//   // ✅ Special case: Only Vijay Kongari should be Absent
+//   if (sweeper.name?.toLowerCase() === "vijay kongari" || 
+//       sweeper.email?. toLowerCase() === "vijaykongari44") {
+//     return "Absent";
+//   }
+  
+//   // Everyone else with alarms is Present
+//   return "Present";
+// };
+
 const getAttendanceStatus = (sweeper, dateKey) => {
   const dateAlarms = sweeper.alarmEvents && sweeper.alarmEvents[dateKey] 
-    ? sweeper.alarmEvents[dateKey] 
+    ?  sweeper.alarmEvents[dateKey] 
     : [];
   
   const totalAlarms = dateAlarms.length;
   
+  // No alarms at all
   if (totalAlarms === 0) {
     return "Day not started";
   }
   
-  // ✅ Special case: Only Vijay Kongari should be Absent
-  if (sweeper.name?.toLowerCase() === "vijay kongari" || 
-      sweeper.email?. toLowerCase() === "vijaykongari44") {
+  // Special case:  Vijay Kongari is always absent
+  if (sweeper. name?.toLowerCase() === "vijay kongari" || 
+      sweeper.email?.toLowerCase() === "vijaykongari44") {
     return "Absent";
   }
   
-  // Everyone else with alarms is Present
-  return "Present";
+  // ✅ NEW: Check if at least 1 alarm is attended
+  const attendedCount = dateAlarms.filter(
+    (ev) => ev.verificationStatus?.toLowerCase() === "attended"
+  ).length;
+  
+  // If at least 1 alarm is attended → Present
+  if (attendedCount > 1) {
+    return "Present";
+  }
+  
+  // If there are alarms but none are attended → Absent
+  return "Absent";
 };
+
+
 
 const SweeperList = () => {
   const [searchTerm, setSearchTerm] = useState("");
