@@ -2607,6 +2607,9 @@
 
 
 
+
+
+
 import React, { useState, useEffect, useRef } from "react";
 import moment from "moment";
 import Card from "../../components/common/Card";
@@ -2644,9 +2647,9 @@ const processAlarmSummary = (sweeper) => {
         if (Array.isArray(sweeper.alarmEvents[dateKey])) {
           sweeper.alarmEvents[dateKey].forEach((ev) => {
             allAlarms.push({
-              ... ev,
+              ...ev,
               verificationStatus: ev.verificationStatus
-                ? ev.verificationStatus. toLowerCase()
+                ? ev.verificationStatus.toLowerCase()
                 : "",
               dateKey: dateKey,
             });
@@ -2665,8 +2668,8 @@ const processAlarmSummary = (sweeper) => {
   const missed = allAlarms.filter(
     (ev) =>
       ev.verificationStatus === "missed" ||
-      ev. verificationStatus === "skipped" ||
-      (! ev.opened && !ev.verificationTimestampMs)
+      ev.verificationStatus === "skipped" ||
+      (!ev.opened && !ev.verificationTimestampMs)
   ).length;
 
   let todayAlarms = [];
@@ -2679,7 +2682,7 @@ const processAlarmSummary = (sweeper) => {
     }));
   }
 
-  const todayTotal = todayAlarms. length;
+  const todayTotal = todayAlarms.length;
   const todayAttended = todayAlarms.filter(
     (ev) => ev.verificationStatus === "attended"
   ).length;
@@ -2708,51 +2711,51 @@ const processAlarmSummary = (sweeper) => {
 //   const dateAlarms = sweeper.alarmEvents && sweeper.alarmEvents[dateKey] 
 //     ? sweeper.alarmEvents[dateKey] 
 //     : [];
-  
+
 //   const totalAlarms = dateAlarms.length;
-  
+
 //   if (totalAlarms === 0) {
 //     return "Day not started";
 //   }
-  
+
 //   // ✅ Special case: Only Vijay Kongari should be Absent
 //   if (sweeper.name?.toLowerCase() === "vijay kongari" || 
 //       sweeper.email?. toLowerCase() === "vijaykongari44") {
 //     return "Absent";
 //   }
-  
+
 //   // Everyone else with alarms is Present
 //   return "Present";
 // };
 
 const getAttendanceStatus = (sweeper, dateKey) => {
-  const dateAlarms = sweeper.alarmEvents && sweeper.alarmEvents[dateKey] 
-    ?  sweeper.alarmEvents[dateKey] 
+  const dateAlarms = sweeper.alarmEvents && sweeper.alarmEvents[dateKey]
+    ? sweeper.alarmEvents[dateKey]
     : [];
-  
+
   const totalAlarms = dateAlarms.length;
-  
+
   // No alarms at all
   if (totalAlarms === 0) {
     return "Day not started";
   }
-  
+
   // Special case:  Vijay Kongari is always absent
-  if (sweeper. name?.toLowerCase() === "vijay kongari" || 
-      sweeper.email?.toLowerCase() === "vijaykongari44") {
+  if (sweeper.name?.toLowerCase() === "vijay kongari" ||
+    sweeper.email?.toLowerCase() === "vijaykongari44") {
     return "Absent";
   }
-  
+
   // ✅ NEW: Check if at least 1 alarm is attended
   const attendedCount = dateAlarms.filter(
     (ev) => ev.verificationStatus?.toLowerCase() === "attended"
   ).length;
-  
+
   // If at least 1 alarm is attended → Present
   if (attendedCount > 1) {
     return "Present";
   }
-  
+
   // If there are alarms but none are attended → Absent
   return "Absent";
 };
@@ -2815,9 +2818,9 @@ const SweeperList = () => {
 
   const fetchSweepers = async () => {
     const res = await fetch(`${API_BASE}/sweepers`);
-    if (! res.ok) throw new Error("Failed to fetch sweepers");
+    if (!res.ok) throw new Error("Failed to fetch sweepers");
     const json = await res.json();
-    return Array.isArray(json. sweepers) ? json.sweepers : [];
+    return Array.isArray(json.sweepers) ? json.sweepers : [];
   };
 
   const fetchAttendanceForSweeper = async (sweeperId, from, to) => {
@@ -2843,11 +2846,11 @@ const SweeperList = () => {
 
   const normalizeEmbeddedEvent = (ev, sweeper) => {
     const copy = { ...(ev || {}) };
-    if (copy.id && ! copy._id) copy._id = copy.id;
+    if (copy.id && !copy._id) copy._id = copy.id;
     if (copy.alarmTimestampMs && typeof copy.alarmTimestampMs !== "number") {
       const p = Number(copy.alarmTimestampMs);
       copy.alarmTimestampMs = isNaN(p) ? null : p;
-    } else if (! copy.alarmTimestampMs && copy.alarmTimestamp) {
+    } else if (!copy.alarmTimestampMs && copy.alarmTimestamp) {
       const p = Number(copy.alarmTimestamp);
       copy.alarmTimestampMs = isNaN(p) ? null : p;
     }
@@ -2859,14 +2862,14 @@ const SweeperList = () => {
       copy.verificationTimestampMs &&
       typeof copy.verificationTimestampMs !== "number"
     ) {
-      const p = Number(copy. verificationTimestampMs);
+      const p = Number(copy.verificationTimestampMs);
       copy.verificationTimestampMs = isNaN(p) ? null : p;
     }
     if (copy.responseMs && typeof copy.responseMs !== "number") {
       const p = Number(copy.responseMs);
       copy.responseMs = isNaN(p) ? null : p;
     }
-    if (! copy.sweeperId) copy.sweeperId = sweeper._id || sweeper.id || null;
+    if (!copy.sweeperId) copy.sweeperId = sweeper._id || sweeper.id || null;
     if (copy.createdAt && typeof copy.createdAt !== "object") {
       const parsed = Date.parse(String(copy.createdAt));
       if (!isNaN(parsed)) copy.createdAt = new Date(parsed);
@@ -2915,14 +2918,14 @@ const SweeperList = () => {
 
         embedded = embedded.filter(ev => {
           const t = Number(ev.alarmTimestampMs);
-          if (! t) return false;
+          if (!t) return false;
           if (fromMs && t < fromMs) return false;
           if (toMs && t > toMs) return false;
           return true;
         });
       }
 
-      embedded. sort(
+      embedded.sort(
         (a, b) => (b.alarmTimestampMs || 0) - (a.alarmTimestampMs || 0)
       );
 
@@ -3025,7 +3028,7 @@ const SweeperList = () => {
             (ev) =>
               (ev.verificationStatus &&
                 String(ev.verificationStatus).toLowerCase() === "skipped") ||
-              (! ev.opened && !ev.verificationTimestampMs)
+              (!ev.opened && !ev.verificationTimestampMs)
           ).length;
           const active = events.filter((ev) => ev.opened === false).length;
           const recent = events
@@ -3104,7 +3107,7 @@ const SweeperList = () => {
   const handleAddSweeper = async (e) => {
     e && e.preventDefault();
     setAddError("");
-    if (! addName.trim() || !addEmail.trim() || !addPassword) {
+    if (!addName.trim() || !addEmail.trim() || !addPassword) {
       setAddError("Name, email and password are required.");
       return;
     }
@@ -3125,12 +3128,12 @@ const SweeperList = () => {
       const text = await res.text();
       let data = null;
       try {
-        data = text ?  JSON.parse(text) : null;
+        data = text ? JSON.parse(text) : null;
       } catch {
         throw new Error("Unexpected response when adding sweeper.");
       }
-      if (! res.ok || !data?. success)
-        throw new Error(data?. message || `Failed to add sweeper (${res.status})`);
+      if (!res.ok || !data?.success)
+        throw new Error(data?.message || `Failed to add sweeper (${res.status})`);
       setAddName("");
       setAddEmail("");
       setAddPassword("");
@@ -3154,9 +3157,9 @@ const SweeperList = () => {
   const openDutyModal = (sweeper) => {
     setSelectedSweeper(sweeper);
     const start = (sweeper.dutyTime && sweeper.dutyTime.start) || "";
-    const end = (sweeper.dutyTime && sweeper. dutyTime.end) || "";
+    const end = (sweeper.dutyTime && sweeper.dutyTime.end) || "";
     const normalize = (val) => {
-      if (! val) return "";
+      if (!val) return "";
       const m = moment(val, moment.ISO_8601, true);
       if (m.isValid()) return m.format("HH:mm");
       return String(val);
@@ -3177,24 +3180,24 @@ const SweeperList = () => {
     }
     const sMoment = moment(dutyStart, "HH:mm");
     const eMoment = moment(dutyEnd, "HH:mm");
-    if (! sMoment.isValid() || !eMoment.isValid()) {
+    if (!sMoment.isValid() || !eMoment.isValid()) {
       setDutyError("Invalid time format.");
       return;
     }
-    if (! eMoment.isAfter(sMoment)) {
+    if (!eMoment.isAfter(sMoment)) {
       setDutyError("End time must be after start time.");
       return;
     }
 
     setSavingDuty(true);
     try {
-      const payload = { start: dutyStart, end:  dutyEnd };
+      const payload = { start: dutyStart, end: dutyEnd };
       const res = await fetch(
         `${API_BASE}/sweepers/${selectedSweeper._id || selectedSweeper.id}/duty-time`,
         {
           method: "PUT",
-          headers:  { "Content-Type": "application/json" },
-          body:  JSON.stringify(payload),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
         }
       );
       const text = await res.text();
@@ -3224,7 +3227,7 @@ const SweeperList = () => {
     const confirm = window.confirm(
       `Delete sweeper "${sweeper.name}"?  This will remove the sweeper and associated data.`
     );
-    if (! confirm) return;
+    if (!confirm) return;
     setDeletingId(id);
     try {
       const res = await fetch(`${API_BASE}/sweepers/${id}`, {
@@ -3233,7 +3236,7 @@ const SweeperList = () => {
       const text = await res.text();
       let data = null;
       try {
-        data = text ? JSON. parse(text) : null;
+        data = text ? JSON.parse(text) : null;
       } catch { }
       if (!res.ok) {
         const msg = data?.message || `Failed to delete sweeper (${res.status})`;
@@ -3288,11 +3291,11 @@ const SweeperList = () => {
       : null;
     const verified = verification === "attended";
     const skipped = verification === "skipped";
-    const missed = skipped || (! opened && !ev.verificationTimestampMs);
+    const missed = skipped || (!opened && !ev.verificationTimestampMs);
     let state = "Ringed";
     if (verified) state = "Attended";
     else if (skipped) state = "Missed (skipped)";
-    else if (! opened) state = "Unopened";
+    else if (!opened) state = "Unopened";
 
     let attendedBy = "-";
     if (verified) {
@@ -3308,20 +3311,36 @@ const SweeperList = () => {
   };
 
   const zones = Array.from(new Set(sweepers.map((s) => s.zone).filter(Boolean)));
-  
+
   // ✅ UPDATED: Apply filters
   const filteredList = sweepers.filter((sweeper) => {
     const nameMatch = sweeper.name
-      ?  sweeper.name.toLowerCase().includes(searchTerm.toLowerCase())
+      ? sweeper.name.toLowerCase().includes(searchTerm.toLowerCase())
       : false;
-    
+
     const zoneMatch = filterZone === "" || (sweeper.zone || "") === filterZone;
-    
+
     const sweeperStatus = getAttendanceStatus(sweeper, filterDate);
     const statusMatch = filterStatus === "" || sweeperStatus === filterStatus;
-    
+
     return nameMatch && zoneMatch && statusMatch;
   });
+
+  // ✅ Dashboard Counts (based on selected date)
+  const totalCount = sweepers.length;
+
+  const presentCount = sweepers.filter(
+    (s) => getAttendanceStatus(s, filterDate) === "Present"
+  ).length;
+
+  const absentCount = sweepers.filter(
+    (s) => getAttendanceStatus(s, filterDate) === "Absent"
+  ).length;
+
+  const dayNotStartedCount = sweepers.filter(
+    (s) => getAttendanceStatus(s, filterDate) === "Day not started"
+  ).length;
+
 
   return (
     <div>
@@ -3349,7 +3368,7 @@ const SweeperList = () => {
                 type="date"
                 className="py-2 px-3 border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary focus: outline-none"
                 value={filterDate}
-                onChange={(e) => setFilterDate(e. target.value)}
+                onChange={(e) => setFilterDate(e.target.value)}
               />
             </div>
 
@@ -3365,6 +3384,56 @@ const SweeperList = () => {
               <option value="Day not started">Day not started</option>
             </select>
           </div>
+
+          {/* ✅ Summary Count Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+
+            {/* Total Sweepers */}
+            <Card>
+              <div className="flex justify-between items-center">
+                <div>
+                  <div className="text-sm text-gray-500">Total Sweepers</div>
+                  <div className="text-3xl font-bold text-blue-600">{totalCount}</div>
+                </div>
+                <FaUserPlus className="text-3xl text-blue-400" />
+              </div>
+            </Card>
+
+            {/* Present */}
+            <Card>
+              <div className="flex justify-between items-center">
+                <div>
+                  <div className="text-sm text-gray-500">Present</div>
+                  <div className="text-3xl font-bold text-green-600">{presentCount}</div>
+                </div>
+                <FaCheckCircle className="text-3xl text-green-500" />
+              </div>
+            </Card>
+
+            {/* Absent */}
+            <Card>
+              <div className="flex justify-between items-center">
+                <div>
+                  <div className="text-sm text-gray-500">Absent</div>
+                  <div className="text-3xl font-bold text-red-600">{absentCount}</div>
+                </div>
+                <FaTimesCircle className="text-3xl text-red-500" />
+              </div>
+            </Card>
+
+            {/* Day Not Started */}
+            <Card>
+              <div className="flex justify-between items-center">
+                <div>
+                  <div className="text-sm text-gray-500">Day Not Started</div>
+                  <div className="text-3xl font-bold text-gray-600">{dayNotStartedCount}</div>
+                </div>
+                <FaClock className="text-3xl text-gray-500" />
+              </div>
+            </Card>
+
+          </div>
+
 
           <div className="flex items-center gap-3">
             <Button color="black" onClick={() => setShowAddModal(true)}>
@@ -3408,10 +3477,10 @@ const SweeperList = () => {
               </thead>
 
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredList. map((sweeper) => {
+                {filteredList.map((sweeper) => {
                   const isDeleting =
-                    deletingId && deletingId === (sweeper._id || sweeper. id);
-                  
+                    deletingId && deletingId === (sweeper._id || sweeper.id);
+
                   const attendanceStatus = getAttendanceStatus(sweeper, filterDate);
                   const summary = processAlarmSummary(sweeper);
 
@@ -3420,7 +3489,7 @@ const SweeperList = () => {
                     : [];
                   const dateAlarmsTotal = dateAlarms.length;
                   const dateAlarmsAttended = dateAlarms.filter(
-                    (ev) => ev.verificationStatus?. toLowerCase() === "attended"
+                    (ev) => ev.verificationStatus?.toLowerCase() === "attended"
                   ).length;
                   const dateAlarmsMissed = dateAlarmsTotal - dateAlarmsAttended;
 
@@ -3445,13 +3514,12 @@ const SweeperList = () => {
                       {/* Attendance column */}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
-                          className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${
-                            attendanceStatus === "Present"
-                              ? "bg-green-100 text-green-700 border border-green-300"
-                              : attendanceStatus === "Absent"
+                          className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${attendanceStatus === "Present"
+                            ? "bg-green-100 text-green-700 border border-green-300"
+                            : attendanceStatus === "Absent"
                               ? "bg-red-100 text-red-700 border border-red-300"
                               : "bg-gray-100 text-gray-700 border border-gray-300"
-                          }`}
+                            }`}
                         >
                           {attendanceStatus}
                         </span>
@@ -3461,10 +3529,10 @@ const SweeperList = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm">
                           {sweeper.dutyTime &&
-                            (sweeper.dutyTime.start || sweeper.dutyTime. end)
-                            ? `${to12Hour(sweeper.dutyTime?. start)} - ${to12Hour(
-                                sweeper.dutyTime?.end
-                              )}`
+                            (sweeper.dutyTime.start || sweeper.dutyTime.end)
+                            ? `${to12Hour(sweeper.dutyTime?.start)} - ${to12Hour(
+                              sweeper.dutyTime?.end
+                            )}`
                             : "Not set"}
                         </div>
                         <div className="mt-1">
@@ -3564,7 +3632,7 @@ const SweeperList = () => {
                 className="w-full border p-2 rounded focus: ring-2 focus:ring-primary/20"
                 placeholder="Email"
                 value={addEmail}
-                onChange={(e) => setAddEmail(e.target. value)}
+                onChange={(e) => setAddEmail(e.target.value)}
               />
 
               <input
@@ -3572,7 +3640,7 @@ const SweeperList = () => {
                 className="w-full border p-2 rounded focus: ring-2 focus:ring-primary/20"
                 placeholder="Password"
                 value={addPassword}
-                onChange={(e) => setAddPassword(e.target. value)}
+                onChange={(e) => setAddPassword(e.target.value)}
               />
 
               <input
@@ -3580,13 +3648,13 @@ const SweeperList = () => {
                 className="w-full border p-2 rounded focus: ring-2 focus:ring-primary/20"
                 placeholder="Zone"
                 value={addZone}
-                onChange={(e) => setAddZone(e. target.value)}
+                onChange={(e) => setAddZone(e.target.value)}
               />
 
               <select
                 className="w-full border p-2 rounded focus:ring-2 focus:ring-primary/20"
                 value={addStatus}
-                onChange={(e) => setAddStatus(e.target. value)}
+                onChange={(e) => setAddStatus(e.target.value)}
               >
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
@@ -3636,7 +3704,7 @@ const SweeperList = () => {
                   type="time"
                   className="w-full border p-2 rounded focus:ring-2 focus:ring-primary/20"
                   value={dutyStart}
-                  onChange={(e) => setDutyStart(e.target. value)}
+                  onChange={(e) => setDutyStart(e.target.value)}
                 />
               </div>
 
@@ -3676,11 +3744,10 @@ const SweeperList = () => {
       {showDetailModal && detailSweeper && (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 p-6 overflow-auto">
           <div
-            className={`w-full max-w-5xl p-6 rounded-lg shadow-lg bg-white ${
-              isPresentToday(attendanceRecords)
-                ? "border-4 border-green-500"
-                : "border-4 border-red-500"
-            }`}
+            className={`w-full max-w-5xl p-6 rounded-lg shadow-lg bg-white ${isPresentToday(attendanceRecords)
+              ? "border-4 border-green-500"
+              : "border-4 border-red-500"
+              }`}
           >
             {/* Header */}
             <div className="flex justify-between items-start mb-6">
@@ -3708,7 +3775,7 @@ const SweeperList = () => {
                   </div>
                   <div>
                     <strong>Duty Time:</strong>{" "}
-                    {to12Hour(detailSweeper.dutyTime?. start)} -{" "}
+                    {to12Hour(detailSweeper.dutyTime?.start)} -{" "}
                     {to12Hour(detailSweeper.dutyTime?.end)}
                   </div>
                 </div>
@@ -3733,22 +3800,20 @@ const SweeperList = () => {
             <div className="border-b border-gray-200 mb-4">
               <nav className="flex space-x-4">
                 <button
-                  className={`px-4 py-2 font-medium border-b-2 transition-colors ${
-                    activeTab === "attendance"
-                      ? "border-primary text-primary"
-                      :  "border-transparent text-gray-500 hover:text-gray-700"
-                  }`}
+                  className={`px-4 py-2 font-medium border-b-2 transition-colors ${activeTab === "attendance"
+                    ? "border-primary text-primary"
+                    : "border-transparent text-gray-500 hover:text-gray-700"
+                    }`}
                   onClick={() => setActiveTab("attendance")}
                 >
                   <FaHistory className="inline mr-2" />
                   Attendance History
                 </button>
                 <button
-                  className={`px-4 py-2 font-medium border-b-2 transition-colors ${
-                    activeTab === "alarms"
-                      ? "border-primary text-primary"
-                      : "border-transparent text-gray-500 hover:text-gray-700"
-                  }`}
+                  className={`px-4 py-2 font-medium border-b-2 transition-colors ${activeTab === "alarms"
+                    ? "border-primary text-primary"
+                    : "border-transparent text-gray-500 hover:text-gray-700"
+                    }`}
                   onClick={() => setActiveTab("alarms")}
                 >
                   <FaBell className="inline mr-2" />
@@ -3808,8 +3873,8 @@ const SweeperList = () => {
                     variant="outline"
                     color="secondary"
                     onClick={() => {
-                      if (! attendanceRecords || attendanceRecords.length === 0) {
-                        window. alert("No records to export");
+                      if (!attendanceRecords || attendanceRecords.length === 0) {
+                        window.alert("No records to export");
                         return;
                       }
                       const header = ["attendanceDate", "recordedDate", "recordedTime"];
@@ -3834,24 +3899,23 @@ const SweeperList = () => {
                       const url = URL.createObjectURL(blob);
                       const a = document.createElement("a");
                       a.href = url;
-                      a.download = `${
-                        detailSweeper. name || "sweeper"
-                      }_attendance_${attendanceFrom}_${attendanceTo}.csv`;
+                      a.download = `${detailSweeper.name || "sweeper"
+                        }_attendance_${attendanceFrom}_${attendanceTo}.csv`;
                       document.body.appendChild(a);
                       a.click();
                       a.remove();
-                      URL. revokeObjectURL(url);
+                      URL.revokeObjectURL(url);
                     }}
                   >
                     <FaDownload className="mr-2" /> Export CSV
                   </Button>
                 </div>
 
-                {attendanceLoading ?  (
+                {attendanceLoading ? (
                   <div className="text-sm text-gray-500">Loading attendance...</div>
                 ) : attendanceRecords.length === 0 ? (
                   <div className="text-sm text-gray-500 bg-gray-50 p-4 rounded">
-                    No attendance records found for this range. 
+                    No attendance records found for this range.
                   </div>
                 ) : (
                   <>
@@ -3877,11 +3941,11 @@ const SweeperList = () => {
                               className="hover:bg-gray-50"
                             >
                               <td className="px-4 py-3">
-                                {a.date ? moment(a. date).format("YYYY-MM-DD") : "-"}
+                                {a.date ? moment(a.date).format("YYYY-MM-DD") : "-"}
                               </td>
                               <td className="px-4 py-3">
                                 {a.createdAt
-                                  ? moment(a. createdAt).format("YYYY-MM-DD")
+                                  ? moment(a.createdAt).format("YYYY-MM-DD")
                                   : "-"}
                               </td>
                               <td className="px-4 py-3">
@@ -3906,11 +3970,11 @@ const SweeperList = () => {
                       <Card>
                         <div className="text-sm text-gray-500">First record</div>
                         <div className="text-sm">
-                          {attendanceRecords. length
+                          {attendanceRecords.length
                             ? moment(
-                                attendanceRecords[attendanceRecords.length - 1].date
-                              ).format("YYYY-MM-DD HH:mm")
-                            :  "-"}
+                              attendanceRecords[attendanceRecords.length - 1].date
+                            ).format("YYYY-MM-DD HH:mm")
+                            : "-"}
                         </div>
                       </Card>
                       <Card>
@@ -3918,8 +3982,8 @@ const SweeperList = () => {
                         <div className="text-sm">
                           {attendanceRecords.length
                             ? moment(attendanceRecords[0].date).format(
-                                "YYYY-MM-DD HH:mm"
-                              )
+                              "YYYY-MM-DD HH:mm"
+                            )
                             : "-"}
                         </div>
                       </Card>
@@ -3935,7 +3999,7 @@ const SweeperList = () => {
 
                 {alarmsLoading ? (
                   <div className="text-sm text-gray-500">Loading alarm events...</div>
-                ) : alarmRecords.length === 0 ?  (
+                ) : alarmRecords.length === 0 ? (
                   <div className="text-sm text-gray-500 bg-gray-50 p-4 rounded">
                     No alarm events found for this sweeper in the selected range.
                   </div>
@@ -3963,7 +4027,7 @@ const SweeperList = () => {
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                          {alarmRecords. map((ev) => {
+                          {alarmRecords.map((ev) => {
                             const verStatus = ev.verificationStatus
                               ? String(ev.verificationStatus).toLowerCase()
                               : "";
@@ -3979,25 +4043,24 @@ const SweeperList = () => {
                                 onClick={() => setSelectedAlarm(ev)}
                               >
                                 <td className="px-4 py-3">
-                                  {ev. alarmTimestampMs
+                                  {ev.alarmTimestampMs
                                     ? moment(Number(ev.alarmTimestampMs)).format(
-                                        "DD MMM YYYY, hh:mm: ss A"
-                                      )
+                                      "DD MMM YYYY, hh:mm: ss A"
+                                    )
                                     : "-"}
                                 </td>
                                 <td className="px-4 py-3">
                                   <span
-                                    className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
-                                      color === "green"
-                                        ? "bg-green-100 text-green-800 border border-green-300"
-                                        : "bg-red-100 text-red-800 border border-red-300"
-                                    }`}
+                                    className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${color === "green"
+                                      ? "bg-green-100 text-green-800 border border-green-300"
+                                      : "bg-red-100 text-red-800 border border-red-300"
+                                      }`}
                                   >
                                     {status}
                                   </span>
                                 </td>
                                 <td className="px-4 py-3">
-                                  {ev.responseMs ?  (
+                                  {ev.responseMs ? (
                                     <span className="font-mono">{ev.responseMs}</span>
                                   ) : (
                                     "-"
@@ -4005,9 +4068,9 @@ const SweeperList = () => {
                                 </td>
                                 <td className="px-4 py-3">
                                   {ev.verificationTimestampMs
-                                    ?  moment(Number(ev.verificationTimestampMs)).format(
-                                        "DD MMM, hh:mm A"
-                                      )
+                                    ? moment(Number(ev.verificationTimestampMs)).format(
+                                      "DD MMM, hh:mm A"
+                                    )
                                     : "-"}
                                 </td>
                                 <td className="px-4 py-3">
@@ -4044,7 +4107,7 @@ const SweeperList = () => {
                           {
                             alarmRecords.filter(
                               (ev) =>
-                                ev.verificationStatus?. toLowerCase() === "attended"
+                                ev.verificationStatus?.toLowerCase() === "attended"
                             ).length
                           }
                         </div>
@@ -4053,7 +4116,7 @@ const SweeperList = () => {
                         <div className="text-sm text-gray-500">Missed</div>
                         <div className="text-2xl font-semibold text-red-600">
                           {
-                            alarmRecords. filter(
+                            alarmRecords.filter(
                               (ev) =>
                                 ev.verificationStatus?.toLowerCase() !== "attended"
                             ).length

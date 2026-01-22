@@ -910,7 +910,7 @@ const AttendanceRecords = () => {
   const [alarmsError, setAlarmsError] = useState("");
 
   const to12Hour = (timeStr) => {
-    if (! timeStr) return "—";
+    if (!timeStr) return "—";
     const m = moment(timeStr, ["HH:mm", moment.ISO_8601], true);
     return m.isValid() ? m.format("hh:mm A") : timeStr;
   };
@@ -930,7 +930,7 @@ const AttendanceRecords = () => {
       const res = await fetch(`${API_BASE}/sweepers`);
       if (!res.ok) throw new Error(`Failed to load sweepers (${res.status})`);
       const json = await res.json();
-      const list = Array.isArray(json. sweepers) ? json.sweepers : [];
+      const list = Array.isArray(json.sweepers) ? json.sweepers : [];
       setSweepers(list);
     } catch (err) {
       console.error("loadSweepers:", err);
@@ -958,7 +958,7 @@ const AttendanceRecords = () => {
         return [];
       }
       const json = await res.json();
-      const records = Array.isArray(json.attendanceHistory) ? json.attendanceHistory :  [];
+      const records = Array.isArray(json.attendanceHistory) ? json.attendanceHistory : [];
       // sort newest first
       records.sort((a, b) => new Date(b.date) - new Date(a.date));
       return records;
@@ -1018,7 +1018,7 @@ const AttendanceRecords = () => {
     try {
       const sweeperId = sweeper._id || sweeper.id;
 
-      const [records, alarms] = await Promise. all([
+      const [records, alarms] = await Promise.all([
         fetchAttendanceForSweeper(sweeperId, attendanceFrom, attendanceTo),
         fetchAlarmsForSweeper(sweeperId, attendanceFrom, attendanceTo),
       ]);
@@ -1038,7 +1038,7 @@ const AttendanceRecords = () => {
 
   // Export:  sweepers + their attendance (exportFrom/exportTo)
   const exportSweepersWithAttendance = async () => {
-    if (! sweepers || sweepers.length === 0) return;
+    if (!sweepers || sweepers.length === 0) return;
     setExporting(true);
     try {
       // We'll fetch each sweeper's attendance for the export range in parallel. 
@@ -1073,11 +1073,11 @@ const AttendanceRecords = () => {
       results.forEach(({ sweeper, attendance }) => {
         if (attendance && attendance.length > 0) {
           attendance.forEach((a) => {
-            const attendanceDate = a.date ?  moment(a.date).format("YYYY-MM-DD") : "";
+            const attendanceDate = a.date ? moment(a.date).format("YYYY-MM-DD") : "";
             const recordedDate = a.createdAt
               ? moment(a.createdAt).format("YYYY-MM-DD")
               : "";
-            const recordedTime = a. createdAt
+            const recordedTime = a.createdAt
               ? moment(a.createdAt).format("HH:mm: ss")
               : "";
             const row = [
@@ -1087,22 +1087,22 @@ const AttendanceRecords = () => {
               sweeper.zone || "",
               sweeper.status || "",
               (sweeper.dutyTime && sweeper.dutyTime.start) || "",
-              (sweeper.dutyTime && sweeper. dutyTime.end) || "",
+              (sweeper.dutyTime && sweeper.dutyTime.end) || "",
               attendanceDate,
               recordedDate,
               recordedTime,
             ].map((v) => `"${String(v).replace(/"/g, '""')}"`);
-            rows.push(row. join(","));
+            rows.push(row.join(","));
           });
         } else {
           // No attendance rows:  still include a row with empty attendance fields
           const row = [
-            sweeper._id || sweeper. id || "",
-            sweeper. name || "",
-            sweeper. email || "",
-            sweeper. zone || "",
-            sweeper. status || "",
-            (sweeper.dutyTime && sweeper. dutyTime.start) || "",
+            sweeper._id || sweeper.id || "",
+            sweeper.name || "",
+            sweeper.email || "",
+            sweeper.zone || "",
+            sweeper.status || "",
+            (sweeper.dutyTime && sweeper.dutyTime.start) || "",
             (sweeper.dutyTime && sweeper.dutyTime.end) || "",
             "",
             "",
@@ -1114,7 +1114,7 @@ const AttendanceRecords = () => {
 
       const csv = [header.join(","), ...rows].join("\n");
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-      const url = URL. createObjectURL(blob);
+      const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       const filename = `sweepers_with_attendance_${exportFrom}_${exportTo}.csv`;
       a.href = url;
@@ -1138,7 +1138,7 @@ const AttendanceRecords = () => {
 
   const filteredSweepers = sweepers.filter((s) => {
     const nameMatch = s.name
-      ?  s.name.toLowerCase().includes(searchTerm.toLowerCase())
+      ? s.name.toLowerCase().includes(searchTerm.toLowerCase())
       : false;
     const zoneMatch = zoneFilter === "" || (s.zone || "") === zoneFilter;
     return nameMatch && zoneMatch;
@@ -1202,7 +1202,7 @@ const AttendanceRecords = () => {
               </div>
             ) : filteredSweepers.length === 0 ? (
               <div className="text-center py-6 text-gray-500">
-                No sweepers found. 
+                No sweepers found.
               </div>
             ) : (
               <ul className="space-y-2">
@@ -1258,7 +1258,7 @@ const AttendanceRecords = () => {
                 </h2>
                 <div className="text-sm text-gray-500">
                   Click a sweeper from the left to view details and attendance
-                  records. 
+                  records.
                 </div>
               </div>
 
@@ -1370,7 +1370,7 @@ const AttendanceRecords = () => {
             <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-4">
               <div className="space-y-1">
                 <h3 className="text-lg sm:text-xl font-semibold">
-                  {selectedSweeper. name}
+                  {selectedSweeper.name}
                 </h3>
                 <div className="text-sm text-gray-600 break-all">
                   {selectedSweeper.email}
@@ -1379,7 +1379,7 @@ const AttendanceRecords = () => {
                   Zone: {selectedSweeper.zone || "—"}
                 </div>
                 <div className="text-sm text-gray-600">
-                  Duty Time: {to12Hour(selectedSweeper. dutyTime?. start)} - {to12Hour(selectedSweeper.dutyTime?.end)}
+                  Duty Time: {to12Hour(selectedSweeper.dutyTime?.start)} - {to12Hour(selectedSweeper.dutyTime?.end)}
                 </div>
                 <div className="text-sm text-gray-600">
                   Geofence points:{" "}
@@ -1432,7 +1432,7 @@ const AttendanceRecords = () => {
                     color="primary"
                     className="w-full sm:w-auto"
                     onClick={async () => {
-                      if (! selectedSweeper) return;
+                      if (!selectedSweeper) return;
 
                       setAttendanceLoading(true);
                       setAttendanceError("");
@@ -1460,7 +1460,7 @@ const AttendanceRecords = () => {
                         setAlarmRecords(alarms);
                       } catch (err) {
                         setAttendanceError(
-                          err?. message || "Failed to refresh attendance"
+                          err?.message || "Failed to refresh attendance"
                         );
                         setAttendanceRecords([]);
                         setAlarmsError(
@@ -1480,46 +1480,54 @@ const AttendanceRecords = () => {
                     color="secondary"
                     className="w-full sm:w-auto whitespace-nowrap"
                     onClick={() => {
-                      if (!attendanceRecords || attendanceRecords.length === 0) {
-                        window.alert("No records to export");
-                        return;
+                      try {
+                        if (!attendanceRecords || attendanceRecords.length === 0) {
+                          window.alert("No attendance records to export for this sweeper.");
+                          return;
+                        }
+
+                        const header = ["attendanceDate", "recordedDate", "recordedTime"];
+
+                        const rows = attendanceRecords.map((a) => {
+                          const attendanceDate = a.date
+                            ? moment(a.date).format("YYYY-MM-DD")
+                            : "";
+                          const recordedDate = a.createdAt
+                            ? moment(a.createdAt).format("YYYY-MM-DD")
+                            : "";
+                          const recordedTime = a.createdAt
+                            ? moment(a.createdAt).format("HH:mm:ss")
+                            : "";
+
+                          return [attendanceDate, recordedDate, recordedTime]
+                            .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+                            .join(",");
+                        });
+
+                        const csvContent = [header.join(","), ...rows].join("\n");
+
+                        const blob = new Blob([csvContent], {
+                          type: "text/csv;charset=utf-8;",
+                        });
+
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement("a");
+
+                        // ✅ FIXED filename (NO SPACE)
+                        link.href = url;
+                        link.download = `${selectedSweeper?.name || "sweeper"}_attendance_${attendanceFrom}_${attendanceTo}.csv`;
+
+                        document.body.appendChild(link);
+                        link.click();
+
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(url);
+                      } catch (err) {
+                        console.error("Export CSV failed:", err);
+                        window.alert("Failed to export CSV. Check console for details.");
                       }
-                      // Export just the displayed attendance records for this sweeper
-                      const header = [
-                        "attendanceDate",
-                        "recordedDate",
-                        "recordedTime",
-                      ];
-                      const rows = attendanceRecords.map((a) => {
-                        const attendanceDate = a.date
-                          ? moment(a.date).format("YYYY-MM-DD")
-                          : "";
-                        const recordedDate = a.createdAt
-                          ?  moment(a.createdAt).format("YYYY-MM-DD")
-                          : "";
-                        const recordedTime = a. createdAt
-                          ? moment(a.createdAt).format("HH:mm: ss")
-                          : "";
-                        return [attendanceDate, recordedDate, recordedTime]
-                          .map((v) =>
-                            `"${String(v).replace(/"/g, '""')}"`
-                          )
-                          .join(",");
-                      });
-                      const csv = [header.join(","), ...rows].join("\n");
-                      const blob = new Blob([csv], {
-                        type: "text/csv;charset=utf-8;",
-                      });
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement("a");
-                      a.href = url;
-                      a.download = `${selectedSweeper?. name || "sweeper"
-                        }_attendance_${attendanceFrom}_${attendanceTo}. csv`;
-                      document.body.appendChild(a);
-                      a.click();
-                      a.remove();
-                      URL. revokeObjectURL(url);
                     }}
+
                   >
                     <FaDownload className="inline-block mr-2" />
                     <span className="hidden sm:inline">Export CSV</span>
@@ -1531,7 +1539,7 @@ const AttendanceRecords = () => {
               {/* Attendance table */}
               {attendanceLoading ? (
                 <div className="text-sm text-gray-500 text-center py-4">
-                  Loading attendance... 
+                  Loading attendance...
                 </div>
               ) : attendanceError ? (
                 <div className="text-sm text-red-600 text-center py-4">
@@ -1539,7 +1547,7 @@ const AttendanceRecords = () => {
                 </div>
               ) : attendanceRecords.length === 0 ? (
                 <div className="text-sm text-gray-500 text-center py-4">
-                  No attendance records for this range. 
+                  No attendance records for this range.
                 </div>
               ) : (
                 <div className="overflow-x-auto max-h-[calc(100vh-24rem)] -mx-4 sm:mx-0">
@@ -1559,7 +1567,7 @@ const AttendanceRecords = () => {
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {attendanceRecords. map((a) => (
+                        {attendanceRecords.map((a) => (
                           <tr
                             key={a._id || `${a.date}-${a.sweeperId}`}
                             className="hover:bg-gray-50"
@@ -1630,14 +1638,14 @@ const AttendanceRecords = () => {
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {alarmRecords. map((ev) => {
+                        {alarmRecords.map((ev) => {
                           // Simplified status logic:  only Attended or Missed
                           const verStatus = ev.verificationStatus
                             ? String(ev.verificationStatus).toLowerCase()
                             : "";
 
                           const isAttended = verStatus === "attended";
-                          const status = isAttended ?  "Attended" : "Missed";
+                          const status = isAttended ? "Attended" : "Missed";
                           const color = isAttended ? "green" : "red";
 
                           return (
@@ -1660,7 +1668,7 @@ const AttendanceRecords = () => {
                                 </span>
                               </td>
                               <td className="px-2 sm:px-3 py-2 whitespace-nowrap text-sm text-gray-900">
-                                {ev.responseMs ?  (
+                                {ev.responseMs ? (
                                   <span className="font-mono">{ev.responseMs}</span>
                                 ) : (
                                   "-"
@@ -1711,14 +1719,14 @@ const AttendanceRecords = () => {
                 </div>
                 <div className="text-sm">
                   <span className="hidden sm:inline">
-                    {attendanceRecords. length
+                    {attendanceRecords.length
                       ? moment(
                         attendanceRecords[attendanceRecords.length - 1].date
                       ).format("YYYY-MM-DD HH:mm")
                       : "-"}
                   </span>
                   <span className="sm:hidden">
-                    {attendanceRecords. length
+                    {attendanceRecords.length
                       ? moment(
                         attendanceRecords[attendanceRecords.length - 1].date
                       ).format("MM-DD HH:mm")
@@ -1740,7 +1748,7 @@ const AttendanceRecords = () => {
                   </span>
                   <span className="sm: hidden">
                     {attendanceRecords.length
-                      ?  moment(attendanceRecords[0].date).format(
+                      ? moment(attendanceRecords[0].date).format(
                         "MM-DD HH:mm"
                       )
                       : "-"}
