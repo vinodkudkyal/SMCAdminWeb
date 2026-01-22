@@ -1481,50 +1481,96 @@ const AttendanceRecords = () => {
                     className="w-full sm:w-auto whitespace-nowrap"
                     onClick={() => {
                       try {
-                        if (!attendanceRecords || attendanceRecords.length === 0) {
-                          window.alert("No attendance records to export for this sweeper.");
+                        if (
+                          (!attendanceRecords || attendanceRecords.length === 0) &&
+                          (!alarmRecords || alarmRecords.length === 0)
+                        ) {
+                          window.alert("No attendance or alarm records to export.");
                           return;
                         }
 
-                        const header = ["attendanceDate", "recordedDate", "recordedTime"];
+                        // ✅ Unified header (attendance + alarms)
+                        const header = [
+                          "type",
+                          "attendance_date",
+                          "recorded_date",
+                          "recorded_time",
+                          "alarm_time",
+                          "alarm_status",
+                          "response_ms",
+                          "verification_time",
+                          "within_geofence",
+                        ];
 
-                        const rows = attendanceRecords.map((a) => {
-                          const attendanceDate = a.date
-                            ? moment(a.date).format("YYYY-MM-DD")
-                            : "";
-                          const recordedDate = a.createdAt
-                            ? moment(a.createdAt).format("YYYY-MM-DD")
-                            : "";
-                          const recordedTime = a.createdAt
-                            ? moment(a.createdAt).format("HH:mm:ss")
-                            : "";
+                        const rows = [];
 
-                          return [attendanceDate, recordedDate, recordedTime]
-                            .map((v) => `"${String(v).replace(/"/g, '""')}"`)
-                            .join(",");
+                        // 📌 Attendance rows
+                        attendanceRecords.forEach((a) => {
+                          rows.push([
+                            "attendance",
+                            a.date ? moment(a.date).format("YYYY-MM-DD") : "",
+                            a.createdAt ? moment(a.createdAt).format("YYYY-MM-DD") : "",
+                            a.createdAt ? moment(a.createdAt).format("HH:mm:ss") : "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                          ]);
                         });
 
-                        const csvContent = [header.join(","), ...rows].join("\n");
+                        // 🔔 Alarm rows
+                        alarmRecords.forEach((ev) => {
+                          const verStatus = ev.verificationStatus
+                            ? String(ev.verificationStatus).toLowerCase()
+                            : "";
 
-                        const blob = new Blob([csvContent], {
+                          const alarmStatus = verStatus === "attended" ? "Attended" : "Missed";
+
+                          rows.push([
+                            "alarm",
+                            "",
+                            "",
+                            "",
+                            ev.alarmTimestampMs
+                              ? moment(Number(ev.alarmTimestampMs)).format("YYYY-MM-DD HH:mm:ss")
+                              : "",
+                            alarmStatus,
+                            ev.responseMs ?? "",
+                            ev.verificationTimestampMs
+                              ? moment(Number(ev.verificationTimestampMs)).format(
+                                "YYYY-MM-DD HH:mm:ss"
+                              )
+                              : "",
+                            ev.withinGeofence == null ? "" : ev.withinGeofence ? "Yes" : "No",
+                          ]);
+                        });
+
+                        // CSV encode
+                        const csv = [
+                          header.join(","),
+                          ...rows.map((r) =>
+                            r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")
+                          ),
+                        ].join("\n");
+
+                        const blob = new Blob([csv], {
                           type: "text/csv;charset=utf-8;",
                         });
 
                         const url = URL.createObjectURL(blob);
                         const link = document.createElement("a");
 
-                        // ✅ FIXED filename (NO SPACE)
                         link.href = url;
-                        link.download = `${selectedSweeper?.name || "sweeper"}_attendance_${attendanceFrom}_${attendanceTo}.csv`;
+                        link.download = `${selectedSweeper?.name || "sweeper"}_attendance_alarms_${attendanceFrom}_${attendanceTo}.csv`;
 
                         document.body.appendChild(link);
                         link.click();
-
                         document.body.removeChild(link);
                         URL.revokeObjectURL(url);
                       } catch (err) {
-                        console.error("Export CSV failed:", err);
-                        window.alert("Failed to export CSV. Check console for details.");
+                        console.error("Export combined CSV failed:", err);
+                        window.alert("Failed to export attendance + alarms.");
                       }
                     }}
 
